@@ -57,6 +57,11 @@ namespace DestinyMusicViewer
                     Wem.IsChecked = true;
                 }
             }
+            if (config.AppSettings.Settings["AudioFormat"] == null)
+            {
+                Wem.IsChecked = true;
+                config.AppSettings.Settings.Add("AudioFormat", "Wem");
+            }
             
         }
 

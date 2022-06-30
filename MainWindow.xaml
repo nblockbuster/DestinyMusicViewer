@@ -31,8 +31,13 @@
                 <RadioButton GroupName="AudioT" x:Name="Ogg" Margin="5" Checked="ChangeAudioType" Content="ogg"/>
             </MenuItem>
         </Menu>
-        <TabControl x:Name="MainTabControl" Grid.Row="1" Background="#3d3d3d" Foreground="#FFE6E6E6" BorderBrush="{x:Null}">
-            <TabItem Header="Bank Viewer" x:Name="BnkViewTab" BorderBrush="{x:Null}" Background="{x:Null}">
+        <TabControl x:Name="MainTabControl" Grid.Row="1" Background="{x:Null}" Foreground="{x:Null}" BorderBrush="{x:Null}">
+            <!--
+            <TabItem Header="Home" x:Name="HomeViewTab" BorderBrush="{x:Null}" Background="{x:Null}" Foreground="Black" >
+                <local:HomeView  x:Name="HomeViewItem"/>
+            </TabItem>
+            -->
+            <TabItem Header="Bank Viewer" x:Name="BnkViewTab" BorderBrush="{x:Null}" Background="{x:Null}" Foreground="Black">
                 <local:BnkView  x:Name="BnkViewItem"/>
             </TabItem>
         </TabControl>

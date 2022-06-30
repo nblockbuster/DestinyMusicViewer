@@ -3,6 +3,7 @@ using System.IO;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -87,10 +88,17 @@ namespace DestinyMusicViewer
                 Configuration config = ConfigurationManager.OpenExeConfiguration(System.Windows.Forms.Application.ExecutablePath);
                 packages_path = config.AppSettings.Settings["PackagesPath"].Value;
                 extractor = new Extractor(packages_path, LoggerLevels.HighVerbouse);
-                GenPkgList();
+                //GenPkgList();
+                //var myResult = Task.Run(() => GenPkgList());
+                Task.Factory.StartNew(() => { GenPkgList(); });
+                //Task.Factory.StartNew(() => { LoadList(); });
                 LoadList();
-                Dispatcher.Invoke(() => log("GUH!"));
+                //myResult = Task.Run(() => { LoadList(); });
+                //t.Wait();
+                //Dispatcher.Invoke(() => log("GUH!"));
                 ShowList();
+                //myResult = Task.Run(() => { ShowList(); });
+                //t.Wait();
             }
             else
             {
@@ -116,10 +124,6 @@ namespace DestinyMusicViewer
                 {
                     Packages.AddOrUpdate(pkg.no_patch_id_name, pkg, (Key, OldValue) => OldValue);
                 }
-                //else
-                //{
-
-                //}
             }
             
         }
@@ -198,9 +202,11 @@ namespace DestinyMusicViewer
         public void ShowList()
         {
             PrimaryList.Children.Clear();
-
+            
+            //for (int i = 0; i < GinsorIDList.Count(); i++)
             foreach (string Ginsorid in GinsorIDList)
             {
+                //string Ginsorid = GinsorIDList[i];
                 ToggleButton btn = new ToggleButton();
                 Style style = Application.Current.Resources["Button_Command"] as Style;
 
@@ -283,9 +289,6 @@ namespace DestinyMusicViewer
                 Export_Clicked(sender, e);
             }
             //string ReferenceableAudioHash = dictlist[GinsorId].entry_a.ToString("X8");
-
-
-
         }
 
         //private void ClickPlay(string GinsorId)
@@ -434,7 +437,7 @@ namespace DestinyMusicViewer
                     extractor = new Extractor(packages_path, LoggerLevels.HighVerbouse);
                     GenPkgList();
                     LoadList();
-                    Dispatcher.Invoke(() => log("GUH!"));
+                    //Dispatcher.Invoke(() => log("GUH!"));
                     ShowList();
                 }
             }
@@ -479,6 +482,7 @@ namespace DestinyMusicViewer
             packages_path = Path;
             return true;
         }
+
         /*
         private void updateOSTDB_buttonOnClick(object sender, RoutedEventArgs e)
     {
@@ -670,27 +674,10 @@ namespace DestinyMusicViewer
 
             string gins_id = ((PrimaryList.Children[SelectedWemIndex] as ToggleButton).Content as TextBlock).Text.Split("\n")[0];
             string output_path = mainWindow.OutputPath + "\\" + gins_id;
-            //Convert vorbis data to wav data using NAudio and save to output folder
-            /*
-            using (var reader = new VorbisWaveReader(vorbis))
-            {
-                using (var writer = new WaveFileWriter(output_path, reader.WaveFormat))
-                {
-                    int read;
-                    var buffer = new byte[bufferSize];
-                    while ((read = reader.Read(buffer, 0, buffer.Length)) > 0)
-                    {
-                        writer.Write(buffer, 0, read);
-                    }
-                }
-            }
-            */
             if (config.AppSettings.Settings["AudioFormat"] == null)
             {
                 config.AppSettings.Settings.Add("AudioFormat", "Wem");
-                //config.AppSettings.Settings["AudioFormat"].Value = "Wem";
             }
-            //MessageBox.Show(config.AppSettings.Settings["AudioFormat"].Value.ToString());
             if (config.AppSettings.Settings["AudioFormat"].Value.ToString() == "Wem")
             {
                 byte[] wem_data = extractor.extract_entry_data(dictlist[gins_id].reference).data;
@@ -702,7 +689,6 @@ namespace DestinyMusicViewer
             }
             else if (config.AppSettings.Settings["AudioFormat"].Value.ToString() == "Ogg")
             {
-                //write oggdata to output folder
                 byte[] ogg_data = new Tiger.Parsers.RIFFAudioParser(dictlist[gins_id].reference, extractor).Parse().data;
                 using (var writer = new FileStream(output_path + ".ogg", FileMode.Create))
                 {
@@ -712,7 +698,6 @@ namespace DestinyMusicViewer
             }
             else if (config.AppSettings.Settings["AudioFormat"].Value.ToString() == "Wav")
             {
-                //write wavdata to output folder
                 byte[] ogg_data = new Tiger.Parsers.RIFFAudioParser(dictlist[gins_id].reference, extractor).Parse().data;
                 using (var vorbis = new VorbisWaveReader(new MemoryStream(ogg_data)))
                 {
@@ -730,6 +715,21 @@ namespace DestinyMusicViewer
         private void ExportWhenClickedOn_Clicked(object sender, RoutedEventArgs e)
         {
             export = true;
+        }
+
+        private void AnyButton_MouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            (sender as ToggleButton).IsChecked = true;
+        }
+
+        private void AnyButton_MouseUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            (sender as ToggleButton).IsChecked = false;
+        }
+
+        private void GenScript_Click(object sender, RoutedEventArgs e)
+        {
+            //TODO: Add code to generate a script for each segment ??
         }
     }
 }
