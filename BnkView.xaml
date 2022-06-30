@@ -1,0 +1,139 @@
+﻿<UserControl x:Class="DestinyMusicViewer.BnkView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:DestinyMusicViewer"
+             Loaded="OnControlLoaded"
+             mc:Ignorable="d" 
+             d:DesignHeight="1080" d:DesignWidth="1920">
+    <Grid Background="#FF424242">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="3*"/>
+            <ColumnDefinition Width="13*"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="37*"/>
+            <RowDefinition Height="8*"/>
+            <!--<RowDefinition Height="8*"/>-->
+        </Grid.RowDefinitions>
+
+        <ScrollViewer Background="#3d3d3d" Name="ScrollView" Margin="0,60,0,5" Focusable="False" Grid.RowSpan="1" >
+            <StackPanel x:Name="PrimaryList" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Focusable="false">
+                <ToggleButton x:Name="SelectPkgsDirectoryButton" Style="{StaticResource ButtonStyle}" Content="Select Packages Directory" VerticalAlignment="Center" HorizontalAlignment="Center" Click="SelectPkgsDirectoryButton_Click" Margin="0,416,0,0" Height="30" Width="150"/>
+            </StackPanel>
+        </ScrollViewer>
+
+        <Menu x:Name="menu" Grid.ColumnSpan="1" Grid.Column="2" Background="#FF424242" Foreground="#FFE6E6E6" BorderBrush="#3d3d3d">
+            <MenuItem Header="E_xport">
+                <!-- <MenuItem Header="Set export path" Click="SetExportPath_Clicked" Background="#3d3d3d" Foreground="White"/> -->
+                <MenuItem Header="Export current wem" Click="Export_Clicked" Background="#FF424242" Foreground="#FFE6E6E6"/>
+                <!-- <MenuItem Header="Export All" Click="ExportAll_Clicked" Background="#FF424242" Foreground="#FFE6E6E6"/> -->
+            </MenuItem>
+        </Menu>
+
+        <!--
+        <ScrollViewer Foreground="{x:Null}" Grid.Row="1" Margin="0,0,0,5">
+            <TreeView x:Name="BnkTree" Margin="5,-2,0,-2" Background="#FF656565" Foreground="#FF656565" BorderBrush="#FF656565" SelectedItemChanged="bnkTree_OnSelectedItemChanged">
+            </TreeView>
+        </ScrollViewer>
+        -->
+        <!--
+        <Grid Grid.Column="0" Grid.Row="2" Margin="2,10,2,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition/>
+                <ColumnDefinition/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="7*"/>
+                <RowDefinition Height="13*"/>
+                <RowDefinition Height="13*"/>
+                <RowDefinition Height="13*"/>
+            </Grid.RowDefinitions>
+            <Button Content="Generate Audio List For BNK" HorizontalAlignment="Center" VerticalAlignment="Center" Background="#FF656565" Foreground="White" BorderBrush="{x:Null}" Width="170" Height="54" Grid.Row="3" Click="gen_list_bnk_single_onClick">
+                <Button.Resources>
+                    <Style TargetType="Border">
+                        <Setter Property="CornerRadius" Value="3"/>
+                    </Style>
+                </Button.Resources>
+            </Button>
+            <Button Content="Regenerate List" HorizontalAlignment="Center" VerticalAlignment="Center" Background="#FF656565" Foreground="White" BorderBrush="{x:Null}" Width="170" Height="54" Click="regenerate_button_onClick" Grid.Row="2">
+                <Button.Resources>
+                    <Style TargetType="Border">
+                        <Setter Property="CornerRadius" Value="3"/>
+                    </Style>
+                </Button.Resources>
+            </Button>
+            <Button Content="Extract Audio" HorizontalAlignment="Center" VerticalAlignment="Center" Background="#FF656565" Foreground="White" BorderBrush="{x:Null}" Width="170" Height="54" Click="extract_button_onClick" Grid.Row="1">
+                <Button.Resources>
+                    <Style TargetType="{x:Type Border}">
+                        <Setter Property="CornerRadius" Value="3"/>
+                    </Style>
+                </Button.Resources>
+            </Button>
+            <Button Content="Unknown" HorizontalAlignment="Center" VerticalAlignment="Center" Background="#FF656565" Foreground="White" BorderBrush="{x:Null}" Width="170" Height="54" Grid.Column="1" Grid.Row="1">
+                <Button.Resources>
+                    <Style TargetType="{x:Type Border}">
+                        <Setter Property="CornerRadius" Value="3"/>
+                    </Style>
+                </Button.Resources>
+            </Button>
+            <Button x:Name="updateOSTsDb_Button" Content="! Update OSTs.db !" HorizontalAlignment="Center" VerticalAlignment="Center" Background="#FF656565" Foreground="White" BorderBrush="{x:Null}" Width="170" Height="54" Grid.Row="3" Grid.Column="1" Click="updateOSTDB_buttonOnClick">
+                <Button.Resources>
+                    <Style TargetType="{x:Type Border}">
+                        <Setter Property="CornerRadius" Value="3"/>
+                    </Style>
+                </Button.Resources>
+            </Button>
+            <Button Content="Unknown" HorizontalAlignment="Center" VerticalAlignment="Center" Background="#FF656565" Foreground="White" BorderBrush="{x:Null}" Width="170" Height="54" Grid.Row="2" Grid.Column="1">
+                <Button.Resources>
+                    <Style TargetType="{x:Type Border}">
+                        <Setter Property="CornerRadius" Value="3"/>
+                    </Style>
+                </Button.Resources>
+            </Button>
+            <TextBox x:Name="wemsBnk" HorizontalAlignment="Center" VerticalContentAlignment="Center" TextAlignment="Left" TextWrapping="Wrap" Text="Wems in Bank: " VerticalAlignment="Center" Width="168" Height="29" IsEnabled="False" BorderBrush="#FF929191" Background="#FF929191" Foreground="White">
+                <TextBox.Resources>
+                    <Style TargetType="{x:Type Border}">
+                        <Setter Property="CornerRadius" Value="3"/>
+                    </Style>
+                </TextBox.Resources>
+            </TextBox>
+            <TextBox x:Name="wemsGame" HorizontalAlignment="Center" VerticalContentAlignment="Center" TextAlignment="Left" TextWrapping="Wrap" Text="Wems in Game: " VerticalAlignment="Center" Width="167" Height="29" IsEnabled="False" BorderBrush="#FF929191" Background="#FF929191" Foreground="White" Grid.Column="1">
+                <TextBox.Resources>
+                    <Style TargetType="{x:Type Border}">
+                        <Setter Property="CornerRadius" Value="3"/>
+                    </Style>
+                </TextBox.Resources>
+            </TextBox>
+        </Grid>
+        -->
+        <Grid HorizontalAlignment="Center" Width="1540" Height="200" VerticalAlignment="Top" Grid.Column="1" Margin="0,880,0,0" Grid.RowSpan="2">
+            <ScrollViewer Name="logging_box_scroller">
+                <Grid Height="200" Width="1515">
+                    <TextBlock x:Name="logging_box" Margin="0,-14,-2,-1" Text="" TextWrapping="Wrap" FontFamily="Consolas" Foreground="White" Background="{x:Null}" FontSize="10" IsEnabled="False" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto"/>
+                </Grid>
+            </ScrollViewer>
+        </Grid>
+        <Grid Grid.Row="1" Margin="14,10,10,14">
+
+            <Grid.RowDefinitions>
+                <RowDefinition/>
+                <RowDefinition/>
+            </Grid.RowDefinitions>
+            <!--
+            <ToggleButton x:Name="PlayPauseButton" Style="{StaticResource ButtonStyle}" Content="Play/Pause" VerticalAlignment="Center" HorizontalAlignment="Left" Click="PlayPauseButton_Click" Height="64" Width="148" FontSize="16" Margin="10,0,0,0"/>
+            <ToggleButton x:Name="StopButton" Style="{StaticResource ButtonStyle}" Content="Stop" VerticalAlignment="Center" HorizontalAlignment="Left" Click="StopButton_Click" Height="64" Width="148" FontSize="16" Margin="178,0,0,0"/>
+            -->
+            <ToggleButton x:Name="PlayPauseButton_Mimic" Style="{StaticResource Button_Command2}" Content="Play/Pause" VerticalAlignment="Center" HorizontalAlignment="Left" Click="PlayPauseButton_Click" Height="64" Width="148" FontSize="16" Margin="10,0,0,0" Background="#FF3D3D3D" Foreground="#FFDDDDDD"/>
+            <ToggleButton x:Name="StopButton_Mimic" Style="{StaticResource Button_Command2}" Content="Stop" VerticalAlignment="Center" HorizontalAlignment="Left" Click="StopButton_Click" Height="64" Width="148" FontSize="16" Margin="178,0,0,0" Background="#FF3D3D3D" Foreground="#FFDDDDDD"/>
+
+            <Slider x:Name="sldrPlaybackProgress" Minimum="0" Maximum="1" ValueChanged="sldrPlaybackProgressChanged"  HorizontalAlignment="Center" Margin="0,56,0,0" Grid.Row="1" VerticalAlignment="Top" Width="316" Foreground="#FFDDDDDD" Height="18" Visibility="Hidden"/>
+            <Slider x:Name="VolSlider" Minimum="0" Maximum="1" ValueChanged="VolSliderUpdated"  HorizontalAlignment="Left" Margin="39,24,0,0" Grid.Row="1" VerticalAlignment="Top" Width="90" Foreground="#FFDDDDDD" Height="18"/>
+            <TextBlock HorizontalAlignment="Left" Margin="56,0,0,0" Grid.Row="1" TextWrapping="Wrap" Text="Volume" VerticalAlignment="Top" Foreground="#FFDDDDDD" FontSize="16" RenderTransformOrigin="0.017,0.909" Height="21" Width="56"/>
+        </Grid>
+        <TextBox x:Name="SearchBox" HorizontalAlignment="Left" Margin="10,10,0,0" TextWrapping="Wrap" Text="Search for GinsorID" VerticalAlignment="Top" Width="155" Height="45" TextAlignment="Center" Background="{x:Null}" Foreground="#FFDDDDDD" KeyDown="SearchBox_KeyDown"/>
+        <Button x:Name="ClearSearchButton" Content="Button" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Height="45" Width="155" Click="ClearSearchButton_Click" Opacity="0"/>
+        <ToggleButton x:Name="ExportAllClickedAudio" Style="{StaticResource Button_Command2}" Content="Auto Export" VerticalAlignment="Top" HorizontalAlignment="Left" Click="ExportWhenClickedOn_Clicked" Height="45" Width="155" FontSize="16" Background="#FF3D3D3D" Foreground="#FFDDDDDD" Margin="195,10,0,0"/>
+    </Grid>
+</UserControl>

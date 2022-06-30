@@ -1,0 +1,51 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.1.32328.378
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DestinyMusicViewer", "DestinyMusicViewer.csproj", "{FB770982-004D-4A3D-B521-BD45234CB7C8}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tiger", "D:\Tiger-master\Tiger\Tiger.csproj", "{92126F6D-152F-4D21-AA1B-340A95D1387A}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WwiseParserLib", "..\WwiseParser\WwiseParserLib\WwiseParserLib.csproj", "{031F8EF5-6A8F-4209-9998-35ADA7827029}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Debug|x64 = Debug|x64
+		Release|Any CPU = Release|Any CPU
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{FB770982-004D-4A3D-B521-BD45234CB7C8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FB770982-004D-4A3D-B521-BD45234CB7C8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FB770982-004D-4A3D-B521-BD45234CB7C8}.Debug|x64.ActiveCfg = Debug|x64
+		{FB770982-004D-4A3D-B521-BD45234CB7C8}.Debug|x64.Build.0 = Debug|x64
+		{FB770982-004D-4A3D-B521-BD45234CB7C8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FB770982-004D-4A3D-B521-BD45234CB7C8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FB770982-004D-4A3D-B521-BD45234CB7C8}.Release|x64.ActiveCfg = Release|x64
+		{FB770982-004D-4A3D-B521-BD45234CB7C8}.Release|x64.Build.0 = Release|x64
+		{92126F6D-152F-4D21-AA1B-340A95D1387A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{92126F6D-152F-4D21-AA1B-340A95D1387A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{92126F6D-152F-4D21-AA1B-340A95D1387A}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{92126F6D-152F-4D21-AA1B-340A95D1387A}.Debug|x64.Build.0 = Debug|Any CPU
+		{92126F6D-152F-4D21-AA1B-340A95D1387A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{92126F6D-152F-4D21-AA1B-340A95D1387A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{92126F6D-152F-4D21-AA1B-340A95D1387A}.Release|x64.ActiveCfg = Release|x64
+		{92126F6D-152F-4D21-AA1B-340A95D1387A}.Release|x64.Build.0 = Release|x64
+		{031F8EF5-6A8F-4209-9998-35ADA7827029}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{031F8EF5-6A8F-4209-9998-35ADA7827029}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{031F8EF5-6A8F-4209-9998-35ADA7827029}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{031F8EF5-6A8F-4209-9998-35ADA7827029}.Debug|x64.Build.0 = Debug|Any CPU
+		{031F8EF5-6A8F-4209-9998-35ADA7827029}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{031F8EF5-6A8F-4209-9998-35ADA7827029}.Release|Any CPU.Build.0 = Release|Any CPU
+		{031F8EF5-6A8F-4209-9998-35ADA7827029}.Release|x64.ActiveCfg = Release|x64
+		{031F8EF5-6A8F-4209-9998-35ADA7827029}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {8E38DA5C-AABB-457B-AB6F-34602102B68A}
+	EndGlobalSection
+EndGlobal

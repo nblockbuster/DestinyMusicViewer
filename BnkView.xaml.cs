@@ -1,0 +1,735 @@
+﻿using System;
+using System.IO;
+using System.Collections.Generic;
+using System.Collections.Concurrent;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
+using System.Windows.Media;
+using System.Net;
+using System.Configuration;
+using NAudio.Wave;
+using NAudio.Vorbis;
+using Tiger;
+using Tiger.Formats;
+using WwiseParserLib.Structures.Chunks;
+using WwiseParserLib.Structures.Objects.HIRC;
+using WwiseParserLib.Structures.SoundBanks;
+using WwiseParserLib;
+
+namespace DestinyMusicViewer
+{
+    /// <summary>
+    /// Interaction logic for BnkView.xaml
+    /// </summary>
+    public partial class BnkView : UserControl
+    {
+        public struct GinsorIdEntry
+        {
+            public Utils.EntryReference reference;
+            public List<uint> SegmentIDs;
+
+        }
+
+        //private static string cache_location = "packages_path.txt";
+        private static string packages_path;
+        private static Extractor extractor;
+        public Dictionary<string, GinsorIdEntry> dictlist = new Dictionary<string, GinsorIdEntry>();
+        public List<string> GinsorIDList = new List<string>();
+        //public List<Package> Packages = new List<Package>();
+        //Dictionary<uint, List<uint>> pkg_bnks_dict = new Dictionary<uint, List<uint>>();
+        private MainWindow mainWindow = null;
+        private static WaveOut waveOut = new WaveOut();
+        public ConcurrentDictionary<string, Package> Packages = new ConcurrentDictionary<string, Package>();
+        string CurrentGinsorId;
+        int SelectedWemIndex = 0;
+        bool export = false;
+        VorbisWaveReader vorbis;
+
+        //private uint selected_packageid;
+        //private uint selected_entry_index;
+
+        public void log(string message)
+        {
+            
+            string time_string = DateTime.Now.ToString("dd/MMM/yyyy hh:mm:ss tt");
+            logging_box.Text += $"[{time_string}]: {message}\n";
+            if (logging_box.Text.Length > 4096)
+            {
+                logging_box.Text = $"[{time_string}]:Text box reached > 4096 characters. Cleared.\n";
+            }
+            logging_box_scroller.ScrollToBottom();
+            File.AppendAllText("log.txt", $"[{time_string}]: {message}\n");
+        }
+
+        public BnkView()
+        {
+            InitializeComponent();
+        }
+        private void OnControlLoaded(object sender, RoutedEventArgs e)
+        {
+            mainWindow = Window.GetWindow(this) as MainWindow;
+            if (mainWindow.PkgCacheName != "")
+            {
+                InitialiseConfig();
+            }
+            VolSlider.Value = 1.0;
+        }
+
+        private void InitialiseConfig()
+        {
+            // Check for package path and load the list
+            if (mainWindow.config.AppSettings.Settings["PackagesPath"] != null)
+            {
+                SelectPkgsDirectoryButton.Visibility = Visibility.Hidden;
+                Configuration config = ConfigurationManager.OpenExeConfiguration(System.Windows.Forms.Application.ExecutablePath);
+                packages_path = config.AppSettings.Settings["PackagesPath"].Value;
+                extractor = new Extractor(packages_path, LoggerLevels.HighVerbouse);
+                GenPkgList();
+                LoadList();
+                Dispatcher.Invoke(() => log("GUH!"));
+                ShowList();
+            }
+            else
+            {
+                MessageBox.Show($"No package path found.");
+            }
+        }
+
+        private void GenPkgList()
+        {
+            List<uint> PackageIDs = new List<uint>();
+            if (File.Exists("GinsorID_ref_dict.json"))
+            {
+                dictlist = Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<string, GinsorIdEntry>>(File.ReadAllText("GinsorID_ref_dict.json"));
+                foreach (var entry in dictlist)
+                {
+                    PackageIDs.Add(entry.Value.reference.package_id);
+                }
+            }
+            var uniq = PackageIDs.Distinct().ToList();
+            foreach (Package pkg in extractor.master_packages_stream())
+            {
+                if (uniq.Contains(pkg.package_id))
+                {
+                    Packages.AddOrUpdate(pkg.no_patch_id_name, pkg, (Key, OldValue) => OldValue);
+                }
+                //else
+                //{
+
+                //}
+            }
+            
+        }
+
+        private void LoadList()
+        {
+            if (File.Exists("GinsorID_ref_dict.json"))
+            {
+                SelectPkgsDirectoryButton.Visibility = Visibility.Hidden;
+                long length = new FileInfo("GinsorID_ref_dict.json").Length;
+                if (length == 0)
+                {
+                    log("OSTs.db empty.");
+                    initialize();
+                }
+                Dispatcher.Invoke(() => log("Found GinsorID_ref_dict.json file."));
+                Dispatcher.Invoke(() => log("Loading..."));
+                dictlist = Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<string, GinsorIdEntry>>(File.ReadAllText("GinsorID_ref_dict.json"));
+                //var logFile = File.ReadAllLines("GinsorID_ref_dict.json");
+                foreach (var entry in dictlist)
+                {
+                    GinsorIDList.Add(entry.Key);
+                }
+                //GinsorIDList = new List<string>(logFile);
+                Dispatcher.Invoke(() => log("Initializing extractor object"));
+                Dispatcher.Invoke(() => log("Extractor initialized"));
+                //foreach (var ginsor_id in GinsorIDList)
+                //{
+                    //uint entry_index = 0;
+                    //Package ginsid_pkg = extractor.find_pkg_of_ginsid(ginsor_id, ref entry_index);
+                    //string v1 = "0" + ginsid_pkg.header().package_id.ToString("X2");
+                    //string v2 = v1 + "-" + entry_index.ToString("X2");
+                    //MessageBox.Show(v1);
+                    //Dispatcher.Invoke(() => log(Utils.generate_reference_hash(ginsid_pkg.package_id, entry_index).ToString()));
+                    //dictlist[ginsor_id] = Utils.generate_reference_hash(ginsid_pkg.package_id, entry_index);
+                //}
+            }
+            else
+            {
+                List<string> GinsorIDs = new List<string>();
+                Dispatcher.Invoke(() => log("Initializing extractor object"));
+                extractor = new Extractor(packages_path, LoggerLevels.HighVerbouse);
+                foreach (Package package in extractor.master_packages_stream())
+                {
+                    if (!package.no_patch_id_name.Contains("audio"))
+                    {
+                        continue;
+                    }
+                    for (int entry_index = 0; entry_index < package.entry_table().Count; entry_index++)
+                    {
+                        Entry entry = package.entry_table()[entry_index];
+                        if (entry.type == 26 && entry.subtype == 6)
+                        {
+                            byte[] bnkData = extractor.extract_entry_data(package, entry).data;
+                            foreach (string gins in genList(bnkData))
+                            {
+                                GinsorIDs.Add(gins);
+                            }
+                        }
+                    }
+                }
+                GC.Collect();
+                if (GinsorIDs.Count == 0)
+                {
+                    throw new Exception("GinsorID table empty?");
+                }
+                var UniqueGinsorIDs = GinsorIDs.Distinct();
+                Dispatcher.Invoke(() => log($"Raw GinsorID List Count: {GinsorIDs.Count} || Unique GinsorID List Count: {UniqueGinsorIDs.ToList().Count}"));
+                File.WriteAllLines("OSTs.db", UniqueGinsorIDs);
+                Dispatcher.Invoke(() => log($"Music Track Amount: {UniqueGinsorIDs.Count()}"));
+                Configuration config = ConfigurationManager.OpenExeConfiguration(System.Windows.Forms.Application.ExecutablePath);
+                config.Save(ConfigurationSaveMode.Minimal);
+            }
+        }
+
+        public void ShowList()
+        {
+            PrimaryList.Children.Clear();
+
+            foreach (string Ginsorid in GinsorIDList)
+            {
+                ToggleButton btn = new ToggleButton();
+                Style style = Application.Current.Resources["Button_Command"] as Style;
+
+                btn.Style = style;
+                btn.HorizontalAlignment = HorizontalAlignment.Stretch;
+                btn.VerticalAlignment = VerticalAlignment.Center;
+                btn.Focusable = true;
+                btn.Content = new TextBlock
+                {
+                    Text = Ginsorid + "\nFrom Package " + dictlist[Ginsorid].reference.package_id.ToString("X2") + "\nIn SegmentIDs: ",
+                    TextWrapping = TextWrapping.Wrap,
+                    FontSize = 13
+                };
+                btn.Background = new SolidColorBrush(System.Windows.Media.Color.FromRgb(61, 61, 61));
+                btn.Foreground = new SolidColorBrush(System.Windows.Media.Color.FromRgb(230, 230, 230));
+                btn.Height = 75;
+                btn.Click += GinsButton_Click;
+                PrimaryList.Children.Add(btn);
+                foreach (uint segment_id in dictlist[Ginsorid].SegmentIDs)
+                {
+                    (btn.Content as TextBlock).Text += segment_id.ToString("X8") + " ";
+                }
+            }
+            ScrollView.ScrollToTop();
+        }
+
+        private void GinsButton_Click(object sender, RoutedEventArgs e)
+        {
+            string ClickedGinsorid = ((sender as ToggleButton).Content as TextBlock).Text;
+            CurrentGinsorId = ClickedGinsorid;
+            PlayAndViewScript(ClickedGinsorid, sender, e);
+            
+        }
+
+        private void PlayAndViewScript(string GinsorId, object sender, RoutedEventArgs e)
+        {
+            SelectedWemIndex = PrimaryList.Children.IndexOf(sender as ToggleButton);
+            
+            /*
+            PrimaryList.Children.Clear();
+
+            ToggleButton btn = new ToggleButton();
+            Style style = Application.Current.Resources["Button_Command"] as Style;
+            btn.Style = style;
+            btn.HorizontalAlignment = HorizontalAlignment.Stretch;
+            btn.VerticalAlignment = VerticalAlignment.Center;
+            btn.Height = 40;
+            btn.Focusable = false;
+            btn.Content = "Go back to package list";
+            btn.Padding = new Thickness(10, 5, 0, 5);
+            btn.Background = new SolidColorBrush(System.Windows.Media.Color.FromRgb(61, 61, 61));
+            btn.Foreground = new SolidColorBrush(System.Windows.Media.Color.FromRgb(230, 230, 230));
+            btn.HorizontalContentAlignment = HorizontalAlignment.Left;
+            btn.Click += GoBack_Click;
+
+            PrimaryList.Children.Add(btn);
+
+            btn = new ToggleButton();
+            btn.Focusable = true;
+
+            btn.Content = new TextBlock
+            {
+                Text = GinsorId + "\nFrom PackageID: " + dictlist[GinsorId].package_id.ToString("X2"),
+                TextWrapping = TextWrapping.Wrap,
+                FontSize = 13
+            };
+
+            btn.Style = style;
+            btn.Height = 70;
+            btn.Background = new SolidColorBrush(System.Windows.Media.Color.FromRgb(61, 61, 61));
+            btn.Foreground = new SolidColorBrush(System.Windows.Media.Color.FromRgb(230, 230, 230));
+            btn.HorizontalContentAlignment = HorizontalAlignment.Left;
+            btn.Click += ClickPlay;
+            PrimaryList.Children.Add(btn);
+            */
+
+            ClickPlay(GinsorId, sender, e);
+            if (export)
+            {
+                Export_Clicked(sender, e);
+            }
+            //string ReferenceableAudioHash = dictlist[GinsorId].entry_a.ToString("X8");
+
+
+
+        }
+
+        //private void ClickPlay(string GinsorId)
+        private void ClickPlay(string GinsorId, object sender, RoutedEventArgs e)
+        {
+            foreach (ToggleButton button in PrimaryList.Children)
+            {
+                button.IsChecked = false;
+            }
+            if ((sender as ToggleButton).IsChecked == true)
+                (sender as ToggleButton).IsChecked = false;
+            if ((sender as ToggleButton).IsChecked == false)
+                (sender as ToggleButton).IsChecked = true;
+            //SelectedWemIndex = PrimaryList.Children.IndexOf((sender as ToggleButton));
+            //(sender as ToggleButton).IsChecked = true;
+            //string GinsorId = (((sender as ToggleButton).Content) as TextBlock).Text.Split("\n")[0];
+            string gins_id = GinsorId.Split("\n")[0];
+            byte[] ogg_data = new Tiger.Parsers.RIFFAudioParser(dictlist[gins_id].reference, extractor).Parse().data;
+            PlayOgg(ogg_data);
+        }
+
+        private void StopButton_Click(object sender, RoutedEventArgs e)
+        {
+            waveOut.Stop();
+            vorbis.Dispose();
+        }
+
+        private void PlayPauseButton_Click(object sender, RoutedEventArgs e)
+        {
+            if ((sender as ToggleButton).IsChecked == true)
+                (sender as ToggleButton).IsChecked = false;
+            if ((sender as ToggleButton).IsChecked == false)
+                (sender as ToggleButton).IsChecked = true;
+            
+            if (waveOut.PlaybackState == PlaybackState.Playing)
+            {
+                waveOut.Pause();
+            }
+            else if (waveOut.PlaybackState == PlaybackState.Paused)
+            {
+                waveOut.Play();
+            }
+        }
+
+        private void PlayOgg(byte[] OggData)
+        {
+            vorbis = new VorbisWaveReader(new MemoryStream(OggData));
+
+            try
+            {
+                waveOut.Dispose();
+                waveOut = new WaveOut();
+                waveOut.Init(vorbis);
+                sldrPlaybackProgress.Maximum = vorbis.Length;
+                sldrPlaybackProgress.Value = vorbis.Position;
+                waveOut.Play();
+            }
+            catch (Exception ex)
+            {
+                log("Error Playing the audio");
+            }
+        }
+
+        private void VolSliderUpdated(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            waveOut.Volume = (float)VolSlider.Value;
+        }
+
+        private void GoBack_Click(object sender, RoutedEventArgs e)
+        {
+            ShowList();
+        }
+
+        public List<string> genList(byte[] soundBankData)
+        {
+            List<string> GinsorIDs = new List<string>();
+            SoundBank memSoundBank = new InMemorySoundBank(soundBankData);
+            var bkhd = memSoundBank.ParseChunk(SoundBankChunkType.BKHD);
+            if (bkhd == null)
+            {
+                throw new Exception("The specified file does not have a valid SoundBank header.");
+            }
+            var hirc = memSoundBank.GetChunk(SoundBankChunkType.HIRC);
+            if (hirc == null)
+            {
+                throw new Exception("The specified file does not have a valid Hierarchy header.");
+            }
+
+            var musicObjs = (hirc as SoundBankHierarchyChunk).Objects
+                .Where(o => o is MusicObject)
+                .Select(o => o as MusicObject);
+
+            foreach (var obj in musicObjs)
+            {
+                if (obj.Type == HIRCObjectType.MusicSegment)
+                {
+                    var segment = obj as MusicSegment;
+                    for (int i = 0; i < segment.ChildCount; i++)
+                    {
+                        foreach (var srch_obj in musicObjs)
+                        {
+                            if (srch_obj.Id == segment.ChildIds[i])
+                            {
+                                bool alreadyInList = false;
+                                var track = srch_obj as MusicTrack;
+                                for (int x = 0; x < track.SoundCount; x++)
+                                {
+                                    var sound = track.Sounds[x];
+                                    var ginsid = ((uint)IPAddress.NetworkToHostOrder((int)sound.AudioId)).ToHex().ToUpper();
+                                    if (GinsorIDs.Contains(ginsid))
+                                    {
+                                        alreadyInList = true;
+                                        continue;
+                                    }
+                                    //Logger.log($"GinsorID of track {track.Id} (Parent Segment: {segment.Id}): {ginsid}", LoggerLevels.HighVerbouse);
+                                    GinsorIDs.Add(ginsid);
+                                }
+                                if (!alreadyInList)
+                                {
+                                    for (int b = 0; b < track.TimeParameterCount; b++)
+                                    {
+                                        var TimeParam = track.TimeParameters[b];
+                                        var EndOffset = TimeParam.EndOffset;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            return GinsorIDs;
+        }
+
+        public void SelectPkgsDirectoryButton_Click(object sender, RoutedEventArgs e)
+        {
+            using (var dialog = new System.Windows.Forms.FolderBrowserDialog())
+            {
+                dialog.Description = $"Select the packages folder";
+                System.Windows.Forms.DialogResult result = dialog.ShowDialog();
+                bool success = SetPackagePath(dialog.SelectedPath);
+                if (success)
+                {
+                    SelectPkgsDirectoryButton.Visibility = Visibility.Hidden;
+                    Configuration config = ConfigurationManager.OpenExeConfiguration(System.Windows.Forms.Application.ExecutablePath);
+                    packages_path = config.AppSettings.Settings["PackagesPath"].Value;
+                    extractor = new Extractor(packages_path, LoggerLevels.HighVerbouse);
+                    GenPkgList();
+                    LoadList();
+                    Dispatcher.Invoke(() => log("GUH!"));
+                    ShowList();
+                }
+            }
+        }
+
+        private void initialize()
+        {
+            var t = Task.Run(() =>
+            {
+                Dispatcher.Invoke(() => log("Initializing extractor object"));
+                extractor = new Extractor(packages_path, LoggerLevels.HighVerbouse);
+                Dispatcher.Invoke(() => log("Extractor initialized"));
+
+                Dispatcher.Invoke(() => log("Building package database"));
+            });
+        }
+
+        private bool SetPackagePath(string Path)
+        {
+            if (Path == "")
+            {
+                MessageBox.Show("Directory selected is invalid, please select the correct packages directory.");
+                return false;
+            }
+            // Verify this is a valid path by checking to see if a .pkg file is inside
+            string[] files = Directory.GetFiles(Path, "*.pkg", SearchOption.TopDirectoryOnly);
+            if (files.Length == 0)
+            {
+                MessageBox.Show("Directory selected is invalid, please select the correct packages directory.");
+                return false;
+            }
+            if (!files[0].Contains("w64_"))
+            {
+                MessageBox.Show("Directory selected is invalid (not PC packages), please select the correct packages directory.");
+                return false;
+            }
+
+            Configuration config = ConfigurationManager.OpenExeConfiguration(System.Windows.Forms.Application.ExecutablePath);
+            config.AppSettings.Settings.Remove("PackagesPath");
+            config.AppSettings.Settings.Add("PackagesPath", Path);
+            config.Save(ConfigurationSaveMode.Minimal);
+            packages_path = Path;
+            return true;
+        }
+        /*
+        private void updateOSTDB_buttonOnClick(object sender, RoutedEventArgs e)
+    {
+        List<string> GinsorIDs = new List<string>();
+        Dispatcher.Invoke(() => log($"Generating new OSTs.db and comparing."));
+        foreach (Package package in extractor.master_packages_stream())
+        {
+            if (!package.no_patch_id_name.Contains("audio") || package.no_patch_id_name.Contains("_en"))
+            {
+                continue;
+            }
+
+            Dispatcher.Invoke(() => log($"Analysing {package.no_patch_id_name}"));
+
+            for (int entry_index = 0; entry_index < package.entry_table().Count; entry_index++)
+            {
+                Entry entry = package.entry_table()[entry_index];
+                if (entry.type != 26 && entry.subtype != 6)
+                {
+                    continue;
+                }
+                //Dispatcher.Invoke(() => log($"\t|-{Utils.entry_name(package.package_id, (uint)entry_index)}"));
+                GinsorIDs = GetAllGinsorIDsInBank(package.package_id, entry.entry_index);
+            }
+        }
+        if (GinsorIDs.Count == 0)
+        {
+            Dispatcher.Invoke(() => log("GinsorID table empty!"));
+            return;
+            //MessageBox.Show("GinsorID Table Empty!", "No Wems Found!", MessageBoxButton.OK, MessageBoxImage.Error);
+            //throw new Exception("GinsorID table empty?");
+        }
+        var UniqueGinsorIDs = GinsorIDs.Distinct();
+        File.WriteAllLines("OSTs.db", UniqueGinsorIDs);
+        Dispatcher.Invoke(() => log("Comparing OSTs.db.old to OSTs.db."));
+
+        if (!File.Exists("OSTs.db.old"))
+        {
+            Dispatcher.Invoke(() => log("OSTs.db.old does not exist."));
+            return;
+        }
+        List<string> GinsorID_New = new List<string>();
+        List<string> GinsorID_Removed = new List<string>();
+        string[] Old_OSTs_Lines;
+        Old_OSTs_Lines = File.ReadAllLines("OSTs.db.old");
+        foreach (string new_ginsid in UniqueGinsorIDs)
+        {
+            if (!Old_OSTs_Lines.Contains(new_ginsid))
+            {
+                GinsorID_New.Add($"+++ {new_ginsid}");
+            }
+
+        }
+        foreach (string old_ginsid in Old_OSTs_Lines)
+        {
+            if (!UniqueGinsorIDs.Contains(old_ginsid))
+            {
+                GinsorID_Removed.Add($"--- {old_ginsid}");
+            }
+        }
+        File.WriteAllLines("modified.txt", GinsorID_New);
+        File.AppendAllLines("modified.txt", GinsorID_Removed);
+        Dispatcher.Invoke(() => log("Removed and Added GinsorIDs stored in 'modified.txt'"));
+    }
+        */
+        public List<string> GetAllGinsorIDsInBank(uint package_id, uint entry_index)
+        {
+            List<string> GinsorIDs = new List<string>();
+            Tiger.Parsers.ParsedFile parsedFile;
+            parsedFile = extractor.extract_entry_data(package_id, (int)entry_index);
+            byte[] soundBankData = parsedFile.data;
+            SoundBank memSoundBank = new InMemorySoundBank(soundBankData);
+            var bkhd = memSoundBank.ParseChunk(SoundBankChunkType.BKHD);
+            if (bkhd == null)
+            {
+                Dispatcher.Invoke(() => log($"{Utils.entry_name(package_id, (uint)entry_index)} does not have a valid Soundbank header."));
+            }
+            var hirc = memSoundBank.GetChunk(SoundBankChunkType.HIRC);
+            if (hirc == null)
+            {
+                Dispatcher.Invoke(() => log($"{Utils.entry_name(package_id, (uint)entry_index)} does not have a valid Hierarchy header."));
+            }
+
+            var musicObjs = (hirc as SoundBankHierarchyChunk).Objects
+                .Where(o => o is MusicObject)
+                .Select(o => o as MusicObject);
+
+            foreach (var obj in musicObjs)
+            {
+                if (obj.Type == HIRCObjectType.MusicSegment)
+                {
+                    var segment = obj as MusicSegment;
+                    for (int i = 0; i < segment.ChildCount; i++)
+                    {
+                        foreach (var srch_obj in musicObjs)
+                        {
+                            if (srch_obj.Id == segment.ChildIds[i])
+                            {
+                                var track = srch_obj as MusicTrack;
+                                for (int x = 0; x < track.SoundCount; x++)
+                                {
+                                    var sound = track.Sounds[x];
+                                    var ginsid = ((uint)IPAddress.NetworkToHostOrder((int)sound.AudioId)).ToHex().ToUpper();
+                                    //Console.WriteLine($"GinsorID of track {track.Id} (Parent Segment: {segment.Id}): {ginsid}");
+                                    GinsorIDs.Add(ginsid);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            if (GinsorIDs.Count == 0)
+            {
+                Dispatcher.Invoke(() => log("GinsorID table empty?"));
+            }
+            var UniqueGinsorIDs = GinsorIDs.Distinct();
+            Dispatcher.Invoke(() => log($"Music Track Amount: {UniqueGinsorIDs.Count()}"));
+            return UniqueGinsorIDs.ToList();
+        }
+
+        private void SearchBox_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            if (e.Key == System.Windows.Input.Key.Enter)
+            {
+                Search();
+            }
+        }
+        
+        private void Search()
+        {
+            foreach (ToggleButton button in PrimaryList.Children)
+            {
+                string GinsorId = (button.Content as TextBlock).Text.Split("\n")[0];
+                if (GinsorId.ToUpper().Contains(SearchBox.Text.ToUpper()))
+                {
+                    button.BringIntoView();
+                    button.IsChecked = true;
+                }
+            }
+        }
+
+        private void ClearSearchButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (SearchBox.Text == "Search for GinsorID")
+            {
+                SearchBox.Clear();
+                ClearSearchButton.Visibility = Visibility.Hidden;
+            }
+        }
+
+        private void sldrPlaybackProgressChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            long newPos = vorbis.Position + (long)(vorbis.WaveFormat.AverageBytesPerSecond * sldrPlaybackProgress.Value);
+            //vorbis.Position += vorbis.WaveFormat.AverageBytesPerSecond;
+            if ((newPos % vorbis.WaveFormat.BlockAlign) != 0)
+                newPos -= newPos % vorbis.WaveFormat.BlockAlign;
+            newPos = Math.Max(0, Math.Min(vorbis.Length, newPos));
+            vorbis.Position = newPos;
+        }
+
+        public void Export_Clicked(object sender, RoutedEventArgs e)
+        {
+            Configuration config = ConfigurationManager.OpenExeConfiguration(System.Windows.Forms.Application.ExecutablePath);
+            if (mainWindow.OutputPath == string.Empty)
+            {
+                //config.Save(ConfigurationSaveMode.Minimal);
+                if (config.AppSettings.Settings["OutputPath"] != null)
+                {
+                    mainWindow.OutputPath = config.AppSettings.Settings["OutputPath"].Value;
+                }
+                else
+                {
+                    using (var dialog = new System.Windows.Forms.FolderBrowserDialog())
+                    {
+                        dialog.Description = $"Select an output folder";
+                        System.Windows.Forms.DialogResult result = dialog.ShowDialog();
+                        if (dialog.SelectedPath == "")
+                        {
+                            MessageBox.Show("Directory selected is invalid, please select the correct packages directory.");
+                            return;
+                        }
+                        mainWindow.OutputPath = dialog.SelectedPath;
+                        config.AppSettings.Settings.Add("OutputPath", mainWindow.OutputPath);
+                        config.Save(ConfigurationSaveMode.Minimal);
+                    }
+                }
+                
+            }
+
+            string gins_id = ((PrimaryList.Children[SelectedWemIndex] as ToggleButton).Content as TextBlock).Text.Split("\n")[0];
+            string output_path = mainWindow.OutputPath + "\\" + gins_id;
+            //Convert vorbis data to wav data using NAudio and save to output folder
+            /*
+            using (var reader = new VorbisWaveReader(vorbis))
+            {
+                using (var writer = new WaveFileWriter(output_path, reader.WaveFormat))
+                {
+                    int read;
+                    var buffer = new byte[bufferSize];
+                    while ((read = reader.Read(buffer, 0, buffer.Length)) > 0)
+                    {
+                        writer.Write(buffer, 0, read);
+                    }
+                }
+            }
+            */
+            if (config.AppSettings.Settings["AudioFormat"] == null)
+            {
+                config.AppSettings.Settings.Add("AudioFormat", "Wem");
+                //config.AppSettings.Settings["AudioFormat"].Value = "Wem";
+            }
+            //MessageBox.Show(config.AppSettings.Settings["AudioFormat"].Value.ToString());
+            if (config.AppSettings.Settings["AudioFormat"].Value.ToString() == "Wem")
+            {
+                byte[] wem_data = extractor.extract_entry_data(dictlist[gins_id].reference).data;
+                using (var writer = new FileStream(output_path + ".wem", FileMode.Create))
+                {
+                    writer.Write(wem_data, 0, wem_data.Length);
+                }
+                Dispatcher.Invoke(() => log($"did it work? {output_path}"));
+            }
+            else if (config.AppSettings.Settings["AudioFormat"].Value.ToString() == "Ogg")
+            {
+                //write oggdata to output folder
+                byte[] ogg_data = new Tiger.Parsers.RIFFAudioParser(dictlist[gins_id].reference, extractor).Parse().data;
+                using (var writer = new FileStream(output_path + ".ogg", FileMode.Create))
+                {
+                    writer.Write(ogg_data, 0, ogg_data.Length);
+                }
+                Dispatcher.Invoke(() => log($"did it work? {output_path}"));
+            }
+            else if (config.AppSettings.Settings["AudioFormat"].Value.ToString() == "Wav")
+            {
+                //write wavdata to output folder
+                byte[] ogg_data = new Tiger.Parsers.RIFFAudioParser(dictlist[gins_id].reference, extractor).Parse().data;
+                using (var vorbis = new VorbisWaveReader(new MemoryStream(ogg_data)))
+                {
+                    WaveFileWriter.CreateWaveFile(output_path + ".wav", vorbis);
+                }
+                Dispatcher.Invoke(() => log($"did it work? {output_path}"));
+            }
+            else
+            {
+                MessageBox.Show("Audio format not supported");
+            }
+            Dispatcher.Invoke(() => log($"did it work? {output_path}"));
+        }
+
+        private void ExportWhenClickedOn_Clicked(object sender, RoutedEventArgs e)
+        {
+            export = true;
+        }
+    }
+}
