@@ -94,5 +94,32 @@ namespace DestinyMusicViewer
             config.AppSettings.Settings["AudioFormat"].Value = AudioFormat.ToString();
             config.Save(ConfigurationSaveMode.Minimal);
         }
+
+        private void ClearOutputPathButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (config.AppSettings.Settings["OutputPath"] != null)
+            {
+                config.AppSettings.Settings.Remove("OutputPath");
+                config.Save(ConfigurationSaveMode.Minimal);
+            }
+        }
+        private void SetOutputPathButton_Click(object sender, RoutedEventArgs e)
+        {
+            using (var dialog = new System.Windows.Forms.FolderBrowserDialog())
+            {
+                dialog.Description = $"Select the output folder";
+                System.Windows.Forms.DialogResult result = dialog.ShowDialog();
+
+                if (dialog.SelectedPath == "")
+                {
+                    MessageBox.Show("Directory selected is invalid, please select the correct packages directory.");
+                    return;
+                }
+
+                config.AppSettings.Settings.Remove("OutputPath");
+                config.AppSettings.Settings.Add("OutputPath", dialog.SelectedPath);
+                config.Save(ConfigurationSaveMode.Minimal);
+            }
+        }
     }
 }

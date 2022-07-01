@@ -25,10 +25,14 @@
                     <TranslateTransform X="-0.079"/>
                 </TransformGroup>
             </Menu.RenderTransform>
-            <MenuItem Header="Audio Type" Background="#FF424242" Foreground="#FFE6E6E6">
+            <MenuItem Header="Audio Type" Background="#FF424242" Foreground="#FFE6E6E6" Height="20" Width="80">
                 <RadioButton GroupName="AudioT" x:Name="Wem" Margin="5" Checked="ChangeAudioType" Content="wem"/>
                 <RadioButton GroupName="AudioT" x:Name="Wav" Margin="5" Checked="ChangeAudioType" Content="wav"/>
                 <RadioButton GroupName="AudioT" x:Name="Ogg" Margin="5" Checked="ChangeAudioType" Content="ogg"/>
+            </MenuItem>
+            <MenuItem Header="Output Path" Background="#FF424242" Foreground="#FFE6E6E6" Height="20" Width="80">
+                <ToggleButton x:Name="ClearOutputPathButton" Content="Clear Output Path" Click="ClearOutputPathButton_Click"/>
+                <ToggleButton x:Name="SetOutputPathButton" Content="Set Output Path" Click="SetOutputPathButton_Click"/>
             </MenuItem>
         </Menu>
         <TabControl x:Name="MainTabControl" Grid.Row="1" Background="{x:Null}" Foreground="{x:Null}" BorderBrush="{x:Null}">

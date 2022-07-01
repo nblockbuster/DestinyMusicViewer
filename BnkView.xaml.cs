@@ -602,7 +602,6 @@ namespace DestinyMusicViewer
             Dispatcher.Invoke(() => log($"Music Track Amount: {UniqueGinsorIDs.Count()}"));
             return UniqueGinsorIDs.ToList();
         }
-
         
         private void SegmentSearchBox_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
         {
@@ -624,33 +623,37 @@ namespace DestinyMusicViewer
         {
             if (seg)
             {
-                
-                SecondaryList.Children.Clear();
+                ToggleButton btn = SegmentDisplayButton;
+                if (btn.Content != null)
+                {
+                    if ((btn.Content as TextBlock).Text != "")
+                        (btn.Content as TextBlock).Text = "";
+                } 
                 List<string> GinsorIdsInSegment = new List<string>();
                 //Search for all keys in dictlist that contain SegmentSearchBox.Text (hex string) as a uint in the SegmentIDs value
+                if (SegmentSearchBox.Text == "") return;
                 var results = dictlist.Where(x => x.Value.SegmentIDs.Contains(Convert.ToUInt32(SegmentSearchBox.Text, 16)));
                 foreach (var result in results)
                 {
                     GinsorIdsInSegment.Add(result.Key);
                 }
 
-                ToggleButton btn = new ToggleButton();
-                Style style = Application.Current.Resources["Button_Command"] as Style;
+                //Style style = Application.Current.Resources["Button_Command"] as Style;
 
-                btn.Style = style;
-                btn.HorizontalAlignment = HorizontalAlignment.Stretch;
-                btn.VerticalAlignment = VerticalAlignment.Center;
-                btn.Focusable = true;
+                //btn.Style = style;
+                //btn.HorizontalAlignment = HorizontalAlignment.Stretch;
+                //btn.VerticalAlignment = VerticalAlignment.Center;
+                //btn.Focusable = false;
                 btn.Content = new TextBlock
                 {
-                    Text = SegmentSearchBox.Text.ToUpper() + "\nContains GinsorIds: ",
+                    Text = "Segment Id: " + SegmentSearchBox.Text.ToUpper() + "\nContains GinsorIds: ",
                     TextWrapping = TextWrapping.Wrap,
                     FontSize = 13
                 };
-                btn.Background = new SolidColorBrush(System.Windows.Media.Color.FromRgb(61, 61, 61));
-                btn.Foreground = new SolidColorBrush(System.Windows.Media.Color.FromRgb(230, 230, 230));
-                btn.Height = 75;
-                btn.Click += GinsButton_Click;
+                //btn.Background = new SolidColorBrush(Color.FromRgb(99, 99, 99));
+                //btn.Foreground = new SolidColorBrush(Color.FromRgb(221, 221, 221));
+                //btn.Height = 75;
+                //btn.Click += GinsButton_Click;
                 //SecondaryList.Children.Add(btn);
                 
                 
@@ -658,11 +661,6 @@ namespace DestinyMusicViewer
                 {
                     (btn.Content as TextBlock).Text += InSegmentGinsorId + " ";
                 }
-
-                
-                SecondaryList.Children.Add(btn);
-
-
 
                 /*
                 foreach (var key in dictlist.Keys)
@@ -745,20 +743,21 @@ namespace DestinyMusicViewer
             }
         }
 
+        /*
         private void ClearSearchButton_Click(object sender, RoutedEventArgs e)
         {
-            SearchBox.Clear();
+            SearchBox.Text = string.Empty;
             ClearSearchButton.Visibility = Visibility.Hidden;
             (sender as ToggleButton).IsChecked = false;
         }
 
         private void ClearSegmentSearchButton_Click(object sender, RoutedEventArgs e)
         {
-            SegmentSearchBox.Clear();
+            SegmentSearchBox.Text = string.Empty;
             ClearSearchButton.Visibility = Visibility.Hidden;
             (sender as ToggleButton).IsChecked = false;
         }
-
+        */
         /*
         private void sldrPlaybackProgressChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
@@ -866,7 +865,5 @@ namespace DestinyMusicViewer
         {
             //TODO: Add logic to export all music files in order.
         }
-
-        
     }
 }
