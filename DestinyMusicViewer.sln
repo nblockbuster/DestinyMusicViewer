@@ -5,9 +5,9 @@ VisualStudioVersion = 17.1.32328.378
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DestinyMusicViewer", "DestinyMusicViewer.csproj", "{FB770982-004D-4A3D-B521-BD45234CB7C8}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tiger", "D:\Tiger-master\Tiger\Tiger.csproj", "{92126F6D-152F-4D21-AA1B-340A95D1387A}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WwiseParserLib", "..\WwiseParser\WwiseParserLib\WwiseParserLib.csproj", "{031F8EF5-6A8F-4209-9998-35ADA7827029}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tiger-Minimal", "..\Tiger-Minimal\Tiger-Minimal.csproj", "{F2DD410F-8D17-41AE-8171-9BB30A86A590}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -25,14 +25,6 @@ Global
 		{FB770982-004D-4A3D-B521-BD45234CB7C8}.Release|Any CPU.Build.0 = Release|Any CPU
 		{FB770982-004D-4A3D-B521-BD45234CB7C8}.Release|x64.ActiveCfg = Release|x64
 		{FB770982-004D-4A3D-B521-BD45234CB7C8}.Release|x64.Build.0 = Release|x64
-		{92126F6D-152F-4D21-AA1B-340A95D1387A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{92126F6D-152F-4D21-AA1B-340A95D1387A}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{92126F6D-152F-4D21-AA1B-340A95D1387A}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{92126F6D-152F-4D21-AA1B-340A95D1387A}.Debug|x64.Build.0 = Debug|Any CPU
-		{92126F6D-152F-4D21-AA1B-340A95D1387A}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{92126F6D-152F-4D21-AA1B-340A95D1387A}.Release|Any CPU.Build.0 = Release|Any CPU
-		{92126F6D-152F-4D21-AA1B-340A95D1387A}.Release|x64.ActiveCfg = Release|x64
-		{92126F6D-152F-4D21-AA1B-340A95D1387A}.Release|x64.Build.0 = Release|x64
 		{031F8EF5-6A8F-4209-9998-35ADA7827029}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{031F8EF5-6A8F-4209-9998-35ADA7827029}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{031F8EF5-6A8F-4209-9998-35ADA7827029}.Debug|x64.ActiveCfg = Debug|Any CPU
@@ -41,6 +33,14 @@ Global
 		{031F8EF5-6A8F-4209-9998-35ADA7827029}.Release|Any CPU.Build.0 = Release|Any CPU
 		{031F8EF5-6A8F-4209-9998-35ADA7827029}.Release|x64.ActiveCfg = Release|x64
 		{031F8EF5-6A8F-4209-9998-35ADA7827029}.Release|x64.Build.0 = Release|x64
+		{F2DD410F-8D17-41AE-8171-9BB30A86A590}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F2DD410F-8D17-41AE-8171-9BB30A86A590}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F2DD410F-8D17-41AE-8171-9BB30A86A590}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{F2DD410F-8D17-41AE-8171-9BB30A86A590}.Debug|x64.Build.0 = Debug|Any CPU
+		{F2DD410F-8D17-41AE-8171-9BB30A86A590}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F2DD410F-8D17-41AE-8171-9BB30A86A590}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F2DD410F-8D17-41AE-8171-9BB30A86A590}.Release|x64.ActiveCfg = Release|Any CPU
+		{F2DD410F-8D17-41AE-8171-9BB30A86A590}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

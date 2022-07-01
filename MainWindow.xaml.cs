@@ -71,7 +71,8 @@ namespace DestinyMusicViewer
             AudioFormat = AudioFormat.Wem;
             if (config.AppSettings.Settings["AudioFormat"] == null)
             {
-                config.AppSettings.Settings.Add("AudioFormat", AudioFormat.ToString());
+                return;
+                //config.AppSettings.Settings.Add("AudioFormat", AudioFormat.ToString());
             }
 
             RadioButton rb = sender as RadioButton;

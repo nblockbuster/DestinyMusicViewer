@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net5.0-windows</TargetFramework>
+    <TargetFramework>net6.0-windows</TargetFramework>
     <Nullable>disable</Nullable>
     <UseWPF>true</UseWPF>
     <UseWindowsForms>True</UseWindowsForms>
@@ -16,8 +16,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Tiger-Minimal\Tiger-Minimal.csproj" />
     <ProjectReference Include="..\WwiseParser\WwiseParserLib\WwiseParserLib.csproj" />
-    <ProjectReference Include="D:\Tiger-master\Tiger\Tiger.csproj" />
   </ItemGroup>
 
 </Project>

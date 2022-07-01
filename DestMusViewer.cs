@@ -5,6 +5,7 @@ namespace DestinyMusicViewer
 {
     public class DestMusViewer
     {
+        /*
         public uint PkgId;
         public uint BnkIndex;
         public int SoundCount;
@@ -31,5 +32,6 @@ namespace DestinyMusicViewer
 
             return true;
         }
+        */
     }
 }
