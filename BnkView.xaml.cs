@@ -796,7 +796,6 @@ namespace DestinyMusicViewer
                         config.Save(ConfigurationSaveMode.Minimal);
                     }
                 }
-                
             }
 
             string gins_id = ((PrimaryList.Children[SelectedWemIndex] as ToggleButton).Content as TextBlock).Text.Split("\n")[0];
@@ -864,6 +863,77 @@ namespace DestinyMusicViewer
         private void ExportAllButton_Click(object sender, RoutedEventArgs e)
         {
             //TODO: Add logic to export all music files in order.
+
+            Configuration config = ConfigurationManager.OpenExeConfiguration(System.Windows.Forms.Application.ExecutablePath);
+            if (mainWindow.OutputPath == string.Empty)
+            {
+                //config.Save(ConfigurationSaveMode.Minimal);
+                if (config.AppSettings.Settings["OutputPath"] != null)
+                {
+                    mainWindow.OutputPath = config.AppSettings.Settings["OutputPath"].Value;
+                }
+                else
+                {
+                    using (var dialog = new System.Windows.Forms.FolderBrowserDialog())
+                    {
+                        dialog.Description = $"Select an output folder";
+                        System.Windows.Forms.DialogResult result = dialog.ShowDialog();
+                        if (dialog.SelectedPath == "")
+                        {
+                            MessageBox.Show("Directory selected is invalid, please select the correct packages directory.");
+                            return;
+                        }
+                        mainWindow.OutputPath = dialog.SelectedPath;
+                        config.AppSettings.Settings.Add("OutputPath", mainWindow.OutputPath);
+                        config.Save(ConfigurationSaveMode.Minimal);
+                    }
+                }
+            }
+            foreach (var dict_entry in dictlist)
+            {
+                string output_path = mainWindow.OutputPath + "\\" + dict_entry.Key;
+                if (config.AppSettings.Settings["AudioFormat"] == null)
+                {
+                    config.AppSettings.Settings.Add("AudioFormat", "Wem");
+                }
+                if (config.AppSettings.Settings["AudioFormat"].Value.ToString().ToLower() == "wem")
+                {
+                    byte[] wem_data = extractor.extract_entry_data(dict_entry.Value.reference).data;
+                    using (var writer = new FileStream(output_path + ".wem", FileMode.Create))
+                    {
+                        writer.Write(wem_data, 0, wem_data.Length);
+                    }
+                }
+                else if (config.AppSettings.Settings["AudioFormat"].Value.ToString().ToLower() == "ogg")
+                {
+                    byte[] ogg_data = new Tiger.Parsers.RIFFAudioParser(dict_entry.Value.reference, extractor).Parse().data;
+                    using (var writer = new FileStream(output_path + ".ogg", FileMode.Create))
+                    {
+                        writer.Write(ogg_data, 0, ogg_data.Length);
+                    }
+                }
+                else if (config.AppSettings.Settings["AudioFormat"].Value.ToString().ToLower() == "wav")
+                {
+                    byte[] ogg_data = new Tiger.Parsers.RIFFAudioParser(dict_entry.Value.reference, extractor).Parse().data;
+                    using (var vorbis = new VorbisWaveReader(new MemoryStream(ogg_data)))
+                    {
+                        //WaveFileWriter.CreateWaveFile(output_path + ".wav", vorbis);
+                        MemoryStream OutputWavStream = new MemoryStream();
+                        WaveFileWriter.WriteWavFileToStream(OutputWavStream, vorbis);
+                        using (var writer = new FileStream(output_path + ".wav", FileMode.Create))
+                        {
+                            writer.Write(OutputWavStream.ToArray(), 0, OutputWavStream.ToArray().Length);
+                        }
+                    }
+                }
+                else
+                {
+                    MessageBox.Show("Audio format not supported");
+                }
+                Dispatcher.Invoke(() => log($"Exported {dict_entry.Key} to {output_path}.{config.AppSettings.Settings["AudioFormat"].Value.ToString().ToLower()}"));
+                //GC.Collect();
+            }
+            (sender as ToggleButton).IsChecked = false;
         }
     }
 }
