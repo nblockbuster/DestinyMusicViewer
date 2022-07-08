@@ -28,6 +28,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="27974888-eecc663c-632d-11e7-8f3b-abf39b8fa913.png" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Extended.Wpf.Toolkit" Version="4.3.0" />
     <PackageReference Include="NAudio" Version="2.1.0" />
     <PackageReference Include="NAudio.Vorbis" Version="1.5.0" />
@@ -37,6 +41,10 @@
   <ItemGroup>
     <ProjectReference Include="..\Tiger-Minimal\Tiger-Minimal.csproj" />
     <ProjectReference Include="..\WwiseParser\WwiseParserLib\WwiseParserLib.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="27974888-eecc663c-632d-11e7-8f3b-abf39b8fa913.png" />
   </ItemGroup>
 
 </Project>

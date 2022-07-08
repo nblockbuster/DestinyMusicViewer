@@ -34,6 +34,9 @@
                 <ToggleButton x:Name="ClearOutputPathButton" Content="Clear Output Path" Click="ClearOutputPathButton_Click"/>
                 <ToggleButton x:Name="SetOutputPathButton" Content="Set Output Path" Click="SetOutputPathButton_Click"/>
             </MenuItem>
+            <ToggleButton x:Name="AboutButton" Content="About" Background="#FF424242" Foreground="#FFE6E6E6" Height="20" Width="80" Click="AboutButton_Click">
+
+            </ToggleButton>
         </Menu>
         <TabControl x:Name="MainTabControl" Grid.Row="1" Background="{x:Null}" Foreground="{x:Null}" BorderBrush="{x:Null}">
             <!--

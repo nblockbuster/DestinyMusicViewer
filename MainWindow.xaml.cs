@@ -124,5 +124,11 @@ namespace DestinyMusicViewer
                 config.Save(ConfigurationSaveMode.Minimal);
             }
         }
+
+        private void AboutButton_Click(object sender, RoutedEventArgs e)
+        {
+            new AboutWindow().Show();
+            AboutButton.IsChecked = false;
+        }
     }
 }
