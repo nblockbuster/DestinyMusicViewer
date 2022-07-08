@@ -115,8 +115,11 @@ namespace DestinyMusicViewer
                     MessageBox.Show("Directory selected is invalid, please select the correct packages directory.");
                     return;
                 }
-
-                config.AppSettings.Settings.Remove("OutputPath");
+                config.Save(ConfigurationSaveMode.Minimal);
+                if (config.AppSettings.Settings["OutputPath"] != null)
+                {
+                    config.AppSettings.Settings.Remove("OutputPath");
+                }
                 config.AppSettings.Settings.Add("OutputPath", dialog.SelectedPath);
                 config.Save(ConfigurationSaveMode.Minimal);
             }

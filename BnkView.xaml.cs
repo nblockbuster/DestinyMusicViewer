@@ -11,6 +11,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Media;
 using System.Net;
 using System.Configuration;
+using System.Diagnostics;
 using NAudio.Wave;
 using NAudio.Vorbis;
 using Tiger;
@@ -19,6 +20,9 @@ using WwiseParserLib.Structures.Chunks;
 using WwiseParserLib.Structures.Objects.HIRC;
 using WwiseParserLib.Structures.SoundBanks;
 using WwiseParserLib;
+using NAudio.Wave.SampleProviders;
+using System.Windows.Media.Animation;
+using System.Windows.Threading;
 
 namespace DestinyMusicViewer
 {
@@ -47,6 +51,8 @@ namespace DestinyMusicViewer
         string CurrentGinsorId;
         int SelectedWemIndex = 0;
         bool export = false;
+        bool seg = false;
+        bool bIsSearched = false;
         VorbisWaveReader vorbis;
 
         //private uint selected_packageid;
@@ -56,13 +62,12 @@ namespace DestinyMusicViewer
         {
             
             string time_string = DateTime.Now.ToString("dd/MMM/yyyy hh:mm:ss tt");
-            logging_box.Text += $"[{time_string}]: {message}\n";
+            Dispatcher.Invoke(() => logging_box.Text += $"[{time_string}]: {message}\n");
             if (logging_box.Text.Length > 4096)
             {
-                logging_box.Text = $"[{time_string}]:Text box reached > 4096 characters. Cleared.\n";
+                Dispatcher.Invoke(() => logging_box.Text = $"[{time_string}]:Text box reached > 4096 characters. Cleared.\n");
             }
-            logging_box_scroller.ScrollToBottom();
-            File.AppendAllText("log.txt", $"[{time_string}]: {message}\n");
+            Dispatcher.Invoke(() => logging_box_scroller.ScrollToBottom());
         }
 
         public BnkView()
@@ -76,7 +81,7 @@ namespace DestinyMusicViewer
             {
                 InitialiseConfig();
             }
-            VolSlider.Value = 1.0;
+            Dispatcher.Invoke(() => VolSlider.Value = 1.0);
         }
 
         private void InitialiseConfig()
@@ -88,17 +93,11 @@ namespace DestinyMusicViewer
                 Configuration config = ConfigurationManager.OpenExeConfiguration(System.Windows.Forms.Application.ExecutablePath);
                 packages_path = config.AppSettings.Settings["PackagesPath"].Value;
                 extractor = new Extractor(packages_path, LoggerLevels.HighVerbouse);
+                //initialize();
                 //GenPkgList();
-                //var myResult = Task.Run(() => GenPkgList());
-                Task.Factory.StartNew(() => { GenPkgList(); });
-                //Task.Factory.StartNew(() => { LoadList(); });
                 LoadList();
-                //myResult = Task.Run(() => { LoadList(); });
-                //t.Wait();
-                //Dispatcher.Invoke(() => log("GUH!"));
                 ShowList();
-                //myResult = Task.Run(() => { ShowList(); });
-                //t.Wait();
+                Dispatcher.Invoke(() => log("All loaded."));
             }
             else
             {
@@ -106,29 +105,41 @@ namespace DestinyMusicViewer
             }
         }
 
-        private void GenPkgList()
+        private void LoadList()
         {
             List<uint> PackageIDs = new List<uint>();
             if (File.Exists("GinsorID_ref_dict.json"))
             {
+                Dispatcher.Invoke(() => log("Found GinsorID_ref_dict.json file."));
+                long length = new FileInfo("GinsorID_ref_dict.json").Length;
+                if (length == 0)
+                {
+                    Dispatcher.Invoke(() => log("GinsorID_ref_dict.json empty."));
+                }
+                Dispatcher.Invoke(() => log("Loading..."));
                 dictlist = Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<string, GinsorIdEntry>>(File.ReadAllText("GinsorID_ref_dict.json"));
                 foreach (var entry in dictlist)
                 {
                     PackageIDs.Add(entry.Value.reference.package_id);
                 }
-            }
-            var uniq = PackageIDs.Distinct().ToList();
-            foreach (Package pkg in extractor.master_packages_stream())
-            {
-                if (uniq.Contains(pkg.package_id))
+                var uniq = PackageIDs.Distinct().ToList();
+                foreach (Package pkg in extractor.master_packages_stream())
                 {
-                    Packages.AddOrUpdate(pkg.no_patch_id_name, pkg, (Key, OldValue) => OldValue);
+                    if (uniq.Contains(pkg.package_id))
+                    {
+                        Packages.AddOrUpdate(pkg.no_patch_id_name, pkg, (Key, OldValue) => OldValue);
+                    }
                 }
+                SelectPkgsDirectoryButton.Visibility = Visibility.Hidden;
+                foreach (var entry in dictlist)
+                {
+                    GinsorIDList.Add(entry.Key);
+                }
+                //initialize();
             }
-            
         }
 
-
+        /*
         private void LoadList()
         {
             if (File.Exists("GinsorID_ref_dict.json"))
@@ -137,30 +148,18 @@ namespace DestinyMusicViewer
                 long length = new FileInfo("GinsorID_ref_dict.json").Length;
                 if (length == 0)
                 {
-                    log("OSTs.db empty.");
+                    log("GinsorID_ref_dict.json empty.");
                     initialize();
                 }
                 Dispatcher.Invoke(() => log("Found GinsorID_ref_dict.json file."));
                 Dispatcher.Invoke(() => log("Loading..."));
-                dictlist = Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<string, GinsorIdEntry>>(File.ReadAllText("GinsorID_ref_dict.json"));
-                //var logFile = File.ReadAllLines("GinsorID_ref_dict.json");
+                //dictlist = Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<string, GinsorIdEntry>>(File.ReadAllText("GinsorID_ref_dict.json"));
                 foreach (var entry in dictlist)
                 {
                     GinsorIDList.Add(entry.Key);
                 }
-                //GinsorIDList = new List<string>(logFile);
                 Dispatcher.Invoke(() => log("Initializing extractor object"));
                 Dispatcher.Invoke(() => log("Extractor initialized"));
-                //foreach (var ginsor_id in GinsorIDList)
-                //{
-                    //uint entry_index = 0;
-                    //Package ginsid_pkg = extractor.find_pkg_of_ginsid(ginsor_id, ref entry_index);
-                    //string v1 = "0" + ginsid_pkg.header().package_id.ToString("X2");
-                    //string v2 = v1 + "-" + entry_index.ToString("X2");
-                    //MessageBox.Show(v1);
-                    //Dispatcher.Invoke(() => log(Utils.generate_reference_hash(ginsid_pkg.package_id, entry_index).ToString()));
-                    //dictlist[ginsor_id] = Utils.generate_reference_hash(ginsid_pkg.package_id, entry_index);
-                //}
             }
             else
             {
@@ -199,39 +198,38 @@ namespace DestinyMusicViewer
                 config.Save(ConfigurationSaveMode.Minimal);
             }
         }
+        */
 
         public void ShowList()
         {
             PrimaryList.Children.Clear();
             
-            //for (int i = 0; i < GinsorIDList.Count(); i++)
             foreach (string GinsorId in GinsorIDList)
             {
-                //string GinsorId = GinsorIDList[i];
                 ToggleButton btn = new ToggleButton();
                 Style style = Application.Current.Resources["Button_Command"] as Style;
 
                 btn.Style = style;
                 btn.HorizontalAlignment = HorizontalAlignment.Stretch;
                 btn.VerticalAlignment = VerticalAlignment.Center;
-                btn.Focusable = true;
                 btn.Content = new TextBlock
                 {
-                    Text = GinsorId + "\nFrom Package " + dictlist[GinsorId].reference.package_id.ToString("X2") + "\nIn SegmentIDs: ",
+                    Text = GinsorId + "\nIn Package " + dictlist[GinsorId].reference.package_id.ToString("X2") + "\nIn SegmentIDs: ",
                     TextWrapping = TextWrapping.Wrap,
                     FontSize = 13
                 };
-                btn.Background = new SolidColorBrush(System.Windows.Media.Color.FromRgb(61, 61, 61));
-                btn.Foreground = new SolidColorBrush(System.Windows.Media.Color.FromRgb(230, 230, 230));
+                btn.Background = new SolidColorBrush(Color.FromRgb(61, 61, 61));
+                btn.Foreground = new SolidColorBrush(Color.FromRgb(230, 230, 230));
                 btn.Height = 75;
+                btn.Focusable = true;
                 btn.Click += GinsButton_Click;
-                PrimaryList.Children.Add(btn);
+                Dispatcher.Invoke(() => PrimaryList.Children.Add(btn));
                 foreach (uint segment_id in dictlist[GinsorId].SegmentIDs)
                 {
                     (btn.Content as TextBlock).Text += segment_id.ToString("X8") + " ";
                 }
             }
-            ScrollView.ScrollToTop();
+            Dispatcher.Invoke(() => ScrollView.ScrollToTop());
         }
 
         private void GinsButton_Click(object sender, RoutedEventArgs e)
@@ -239,73 +237,78 @@ namespace DestinyMusicViewer
             string ClickedGinsorId = ((sender as ToggleButton).Content as TextBlock).Text;
             CurrentGinsorId = ClickedGinsorId;
             PlayAndViewScript(ClickedGinsorId, sender, e);
-            
         }
 
         private void PlayAndViewScript(string GinsorId, object sender, RoutedEventArgs e)
         {
-            SelectedWemIndex = PrimaryList.Children.IndexOf(sender as ToggleButton);
-            
-            /*
-            PrimaryList.Children.Clear();
-
-            ToggleButton btn = new ToggleButton();
-            Style style = Application.Current.Resources["Button_Command"] as Style;
-            btn.Style = style;
-            btn.HorizontalAlignment = HorizontalAlignment.Stretch;
-            btn.VerticalAlignment = VerticalAlignment.Center;
-            btn.Height = 40;
-            btn.Focusable = false;
-            btn.Content = "Go back to package list";
-            btn.Padding = new Thickness(10, 5, 0, 5);
-            btn.Background = new SolidColorBrush(System.Windows.Media.Color.FromRgb(61, 61, 61));
-            btn.Foreground = new SolidColorBrush(System.Windows.Media.Color.FromRgb(230, 230, 230));
-            btn.HorizontalContentAlignment = HorizontalAlignment.Left;
-            btn.Click += GoBack_Click;
-
-            PrimaryList.Children.Add(btn);
-
-            btn = new ToggleButton();
-            btn.Focusable = true;
-
-            btn.Content = new TextBlock
+            if (!bIsSearched)
             {
-                Text = GinsorId + "\nFrom PackageID: " + dictlist[GinsorId].package_id.ToString("X2"),
-                TextWrapping = TextWrapping.Wrap,
-                FontSize = 13
-            };
-
-            btn.Style = style;
-            btn.Height = 70;
-            btn.Background = new SolidColorBrush(System.Windows.Media.Color.FromRgb(61, 61, 61));
-            btn.Foreground = new SolidColorBrush(System.Windows.Media.Color.FromRgb(230, 230, 230));
-            btn.HorizontalContentAlignment = HorizontalAlignment.Left;
-            btn.Click += ClickPlay;
-            PrimaryList.Children.Add(btn);
-            */
+                SelectedWemIndex = PrimaryList.Children.IndexOf(sender as ToggleButton);   
+            }
 
             ClickPlay(GinsorId, sender, e);
             if (export)
             {
                 Export_Clicked(sender, e);
             }
-            //string ReferenceableAudioHash = dictlist[GinsorId].entry_a.ToString("X8");
+            if (bIsSearched)
+            {
+                Dispatcher.Invoke(() => (sender as ToggleButton).IsChecked = false);
+                bIsSearched = false;
+            }
         }
 
         private void ClickPlay(string GinsorId, object sender, RoutedEventArgs e)
         {
+            string gins_id = GinsorId.Split("\n")[0];
+
             foreach (ToggleButton button in PrimaryList.Children)
             {
-                button.IsChecked = false;
+                Dispatcher.Invoke(() => button.IsChecked = false);
             }
             if ((sender as ToggleButton).IsChecked == true)
-                (sender as ToggleButton).IsChecked = false;
+                Dispatcher.Invoke(() => (sender as ToggleButton).IsChecked = false);
             if ((sender as ToggleButton).IsChecked == false)
-                (sender as ToggleButton).IsChecked = true;
-            //SelectedWemIndex = PrimaryList.Children.IndexOf((sender as ToggleButton));
-            //(sender as ToggleButton).IsChecked = true;
-            //string GinsorId = (((sender as ToggleButton).Content) as TextBlock).Text.Split("\n")[0];
-            string gins_id = GinsorId.Split("\n")[0];
+                Dispatcher.Invoke(() => (sender as ToggleButton).IsChecked = true);
+
+            if (SecondaryList.Children.Count > 0)
+            {
+                Dispatcher.Invoke(() => SecondaryList.Children.Clear());
+            }
+            foreach (var segid in dictlist[gins_id].SegmentIDs)
+            {
+                string SegmentId = segid.ToHex().ToUpper();
+                GinsorIdsInSegment.Clear();
+                var results = dictlist.Where(x => x.Value.SegmentIDs.Contains(segid));
+                foreach (var result in results)
+                {
+                    GinsorIdsInSegment.Add(result.Key);
+                }
+                ToggleButton btn = new ToggleButton();
+                Style style = Application.Current.Resources["Button_Command"] as Style;
+
+                btn.Style = style;
+                btn.HorizontalAlignment = HorizontalAlignment.Stretch;
+                btn.VerticalAlignment = VerticalAlignment.Center;
+                btn.Focusable = true;
+                btn.Height = 75;
+                btn.Click += PlaySegmentAudio;
+                btn.Content = new TextBlock
+                {
+                    Text = "Segment Id: " + SegmentId + "\nContains GinsorIds: ",
+                    TextWrapping = TextWrapping.Wrap,
+                    FontSize = 13
+                };
+
+                foreach (var InSegmentGinsorId in GinsorIdsInSegment)
+                {
+                    (btn.Content as TextBlock).Text += InSegmentGinsorId + " ";
+                }
+                btn.Background = new SolidColorBrush(Color.FromRgb(61, 61, 61));
+                btn.Foreground = new SolidColorBrush(Color.FromRgb(230, 230, 230));
+                Dispatcher.Invoke(() => SecondaryList.Children.Add(btn));
+            }
+
             byte[] ogg_data = new Tiger.Parsers.RIFFAudioParser(dictlist[gins_id].reference, extractor).Parse().data;
             PlayOgg(ogg_data);
         }
@@ -313,9 +316,8 @@ namespace DestinyMusicViewer
         private void StopButton_Click(object sender, RoutedEventArgs e)
         {
             waveOut.Stop();
-            vorbis.Dispose();
+            Dispatcher.Invoke(() => PlaybackProgressBar.Value = 0);
             (sender as ToggleButton).IsChecked = false;
-            //(PrimaryList.Children[SelectedWemIndex] as ToggleButton).IsChecked = false;
         }
 
         private void PlayPauseButton_Click(object sender, RoutedEventArgs e)
@@ -323,7 +325,6 @@ namespace DestinyMusicViewer
             if (waveOut.PlaybackState == PlaybackState.Playing)
             {
                 waveOut.Pause();
-                //(sender as ToggleButton).IsChecked = true;
             }
             else if (waveOut.PlaybackState == PlaybackState.Paused)
             {
@@ -336,15 +337,18 @@ namespace DestinyMusicViewer
         {
             vorbis = new VorbisWaveReader(new MemoryStream(OggData));
             double duration = vorbis.Length / vorbis.WaveFormat.AverageBytesPerSecond;
-            TrackInfoTextBlock.Text = "Track Info:\n    Length: " + duration.ToString("0.00") + "s";// + "\n" + vorbis.TrackCount.ToString();
+            TrackInfoTextBlock.Text = "Track Info:\n    Length: " + duration.ToString("0.00") + "s";
             try
             {
                 waveOut.Dispose();
                 waveOut = new WaveOut();
                 waveOut.Init(vorbis);
-                //sldrPlaybackProgress.Maximum = vorbis.Length;
-                //sldrPlaybackProgress.Value = vorbis.Position;
+                Dispatcher.Invoke(() => PlaybackProgressBar.Maximum = duration * 1000);
+                Dispatcher.Invoke(() => PlaybackProgressBar.Value = 0);
+
                 waveOut.Play();
+                Thread thread = new Thread(new ThreadStart(Run));
+                thread.Start();
             }
             catch (Exception ex)
             {
@@ -352,74 +356,28 @@ namespace DestinyMusicViewer
             }
         }
 
+        private void Run()
+        {
+            while (true)
+            {
+                Debug.WriteLine("PlaybackState: " + waveOut.PlaybackState);
+
+                if (waveOut.PlaybackState == PlaybackState.Playing)
+                {
+                    //Debug.WriteLine("Bytes played: " + waveOut.GetPosition());
+
+                    double ms = (waveOut.GetPosition() * 1000) / waveOut.OutputWaveFormat.BitsPerSample / waveOut.OutputWaveFormat.Channels * 8 / waveOut.OutputWaveFormat.SampleRate;
+                    Dispatcher.Invoke(() => PlaybackProgressBar.Value = ms);
+                    //Debug.WriteLine("Milliseconds Played: " + ms);
+                }
+
+                Thread.Sleep(200);
+            }
+        }
+
         private void VolSliderUpdated(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
             waveOut.Volume = (float)VolSlider.Value;
-        }
-
-        private void GoBack_Click(object sender, RoutedEventArgs e)
-        {
-            ShowList();
-        }
-
-        public List<string> genList(byte[] soundBankData)
-        {
-            List<string> GinsorIDs = new List<string>();
-            SoundBank memSoundBank = new InMemorySoundBank(soundBankData);
-            var bkhd = memSoundBank.ParseChunk(SoundBankChunkType.BKHD);
-            if (bkhd == null)
-            {
-                throw new Exception("The specified file does not have a valid SoundBank header.");
-            }
-            var hirc = memSoundBank.GetChunk(SoundBankChunkType.HIRC);
-            if (hirc == null)
-            {
-                throw new Exception("The specified file does not have a valid Hierarchy header.");
-            }
-
-            var musicObjs = (hirc as SoundBankHierarchyChunk).Objects
-                .Where(o => o is MusicObject)
-                .Select(o => o as MusicObject);
-
-            foreach (var obj in musicObjs)
-            {
-                if (obj.Type == HIRCObjectType.MusicSegment)
-                {
-                    var segment = obj as MusicSegment;
-                    for (int i = 0; i < segment.ChildCount; i++)
-                    {
-                        foreach (var srch_obj in musicObjs)
-                        {
-                            if (srch_obj.Id == segment.ChildIds[i])
-                            {
-                                bool alreadyInList = false;
-                                var track = srch_obj as MusicTrack;
-                                for (int x = 0; x < track.SoundCount; x++)
-                                {
-                                    var sound = track.Sounds[x];
-                                    var ginsid = ((uint)IPAddress.NetworkToHostOrder((int)sound.AudioId)).ToHex().ToUpper();
-                                    if (GinsorIDs.Contains(ginsid))
-                                    {
-                                        alreadyInList = true;
-                                        continue;
-                                    }
-                                    //Logger.log($"GinsorID of track {track.Id} (Parent Segment: {segment.Id}): {ginsid}", LoggerLevels.HighVerbouse);
-                                    GinsorIDs.Add(ginsid);
-                                }
-                                if (!alreadyInList)
-                                {
-                                    for (int b = 0; b < track.TimeParameterCount; b++)
-                                    {
-                                        var TimeParam = track.TimeParameters[b];
-                                        var EndOffset = TimeParam.EndOffset;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            return GinsorIDs;
         }
 
         public void SelectPkgsDirectoryButton_Click(object sender, RoutedEventArgs e)
@@ -435,9 +393,9 @@ namespace DestinyMusicViewer
                     Configuration config = ConfigurationManager.OpenExeConfiguration(System.Windows.Forms.Application.ExecutablePath);
                     packages_path = config.AppSettings.Settings["PackagesPath"].Value;
                     extractor = new Extractor(packages_path, LoggerLevels.HighVerbouse);
-                    GenPkgList();
+                    //GenPkgList();
+                    //initialize();
                     LoadList();
-                    //Dispatcher.Invoke(() => log("GUH!"));
                     ShowList();
                 }
             }
@@ -462,7 +420,6 @@ namespace DestinyMusicViewer
                 MessageBox.Show("Directory selected is invalid, please select the correct packages directory.");
                 return false;
             }
-            // Verify this is a valid path by checking to see if a .pkg file is inside
             string[] files = Directory.GetFiles(Path, "*.pkg", SearchOption.TopDirectoryOnly);
             if (files.Length == 0)
             {
@@ -607,7 +564,8 @@ namespace DestinyMusicViewer
         {
             if (e.Key == System.Windows.Input.Key.Enter)
             {
-                Search(true);
+                seg = true;
+                Search();
             }
         }
 
@@ -615,160 +573,115 @@ namespace DestinyMusicViewer
         {
             if (e.Key == System.Windows.Input.Key.Enter)
             {
-                Search(false);
+                Search();
             }
         }
-        
-        private void Search(bool seg)
+
+        List<string> GinsorIdsInSegment = new List<string>();
+
+        private void Search()
         {
             if (seg)
             {
-                ToggleButton btn = SegmentDisplayButton;
-                if (btn.Content != null)
+                if (SecondaryList.Children.Count > 0)
                 {
-                    if ((btn.Content as TextBlock).Text != "")
-                        (btn.Content as TextBlock).Text = "";
-                } 
-                List<string> GinsorIdsInSegment = new List<string>();
-                //Search for all keys in dictlist that contain SegmentSearchBox.Text (hex string) as a uint in the SegmentIDs value
+                    Dispatcher.Invoke(() => SecondaryList.Children.Clear());
+                }
                 if (SegmentSearchBox.Text == "") return;
-                var results = dictlist.Where(x => x.Value.SegmentIDs.Contains(Convert.ToUInt32(SegmentSearchBox.Text, 16)));
+                string SegmentId = SegmentSearchBox.Text.ToUpper();
+                GinsorIdsInSegment.Clear();
+                var results = dictlist.Where(x => x.Value.SegmentIDs.Contains(Convert.ToUInt32(SegmentId, 16)));
                 foreach (var result in results)
                 {
                     GinsorIdsInSegment.Add(result.Key);
                 }
+                ToggleButton btn = new ToggleButton();
+                Style style = Application.Current.Resources["Button_Command"] as Style;
 
-                //Style style = Application.Current.Resources["Button_Command"] as Style;
-
-                //btn.Style = style;
-                //btn.HorizontalAlignment = HorizontalAlignment.Stretch;
-                //btn.VerticalAlignment = VerticalAlignment.Center;
-                //btn.Focusable = false;
+                btn.Style = style;
+                btn.HorizontalAlignment = HorizontalAlignment.Stretch;
+                btn.VerticalAlignment = VerticalAlignment.Center;
+                btn.Focusable = true;
+                btn.Height = 75;
+                btn.Click += PlaySegmentAudio;
                 btn.Content = new TextBlock
                 {
-                    Text = "Segment Id: " + SegmentSearchBox.Text.ToUpper() + "\nContains GinsorIds: ",
+                    Text = "Segment Id: " + SegmentId + "\nContains GinsorIds: ",
                     TextWrapping = TextWrapping.Wrap,
                     FontSize = 13
                 };
-                //btn.Background = new SolidColorBrush(Color.FromRgb(99, 99, 99));
-                //btn.Foreground = new SolidColorBrush(Color.FromRgb(221, 221, 221));
-                //btn.Height = 75;
-                //btn.Click += GinsButton_Click;
-                //SecondaryList.Children.Add(btn);
-                
                 
                 foreach (var InSegmentGinsorId in GinsorIdsInSegment)
                 {
                     (btn.Content as TextBlock).Text += InSegmentGinsorId + " ";
                 }
-
-                /*
-                foreach (var key in dictlist.Keys)
-                {
-                    if (dictlist[key].SegmentIDs.Contains(Convert.ToUInt32(SegmentSearchBox.Text, 16)))
-                    {
-                        foreach (var seg_id in dictlist[key].SegmentIDs.ToList())
-                        {
-                            ToggleButton btn = new ToggleButton();
-                            Style style = Application.Current.Resources["Button_Command"] as Style;
-
-                            btn.Style = style;
-                            btn.HorizontalAlignment = HorizontalAlignment.Stretch;
-                            btn.VerticalAlignment = VerticalAlignment.Center;
-                            btn.Focusable = true;
-                            btn.Content = new TextBlock
-                            {
-                                Text = SegmentId_Hex + "\nContains GinsorIds: ",
-                                TextWrapping = TextWrapping.Wrap,
-                                FontSize = 13
-                            };
-                            btn.Background = new SolidColorBrush(System.Windows.Media.Color.FromRgb(61, 61, 61));
-                            btn.Foreground = new SolidColorBrush(System.Windows.Media.Color.FromRgb(230, 230, 230));
-                            btn.Height = 75;
-                            btn.Click += GinsButton_Click;
-                            SecondaryList.Children.Add(btn);
-                            (btn.Content as TextBlock).Text += key + " ";
-                        }
-                    }
-                }
-                */
-
-                /*
-                foreach (uint SegmentId in dictlist[GinsorId].SegmentIDs)
-                {
-                    string SegmentId_Hex = SegmentId.ToString("X8");
-                    if (SegmentId_Hex.ToUpper() != SegmentSearchBox.Text.ToUpper())
-                        continue;
-
-                    ToggleButton btn = new ToggleButton();
-                    Style style = Application.Current.Resources["Button_Command"] as Style;
-
-                    btn.Style = style;
-                    btn.HorizontalAlignment = HorizontalAlignment.Stretch;
-                    btn.VerticalAlignment = VerticalAlignment.Center;
-                    btn.Focusable = true;
-                    btn.Content = new TextBlock
-                    {
-                        Text = SegmentId_Hex + "\nContains GinsorIds: ",
-                        TextWrapping = TextWrapping.Wrap,
-                        FontSize = 13
-                    };
-                    btn.Background = new SolidColorBrush(System.Windows.Media.Color.FromRgb(61, 61, 61));
-                    btn.Foreground = new SolidColorBrush(System.Windows.Media.Color.FromRgb(230, 230, 230));
-                    btn.Height = 75;
-                    btn.Click += GinsButton_Click;
-                    PrimaryList.Children.Add(btn);
-
-                    //search for all keys in dictlist that have the same segment id as the current segment id
-                    
-
-                    foreach (uint segid in dictlist[GinsorId].SegmentIDs)
-                    {
-                        (btn.Content as TextBlock).Text += segid.ToString("X8") + " ";
-                    }
-                }
-                */
+                btn.Background = new SolidColorBrush(Color.FromRgb(61, 61, 61));
+                btn.Foreground = new SolidColorBrush(Color.FromRgb(230, 230, 230));
+                Dispatcher.Invoke(() => SecondaryList.Children.Add(btn));
             }
             else
             {
-                foreach (ToggleButton button in PrimaryList.Children)
+
+                if (SearchBox.Text == "") return;
+                if (SecondaryList.Children.Count > 0)
                 {
-                    string GinsorId = (button.Content as TextBlock).Text.Split("\n")[0];
-                    if (GinsorId.ToUpper().Contains(SearchBox.Text.ToUpper()))
+                    Dispatcher.Invoke(() => SecondaryList.Children.Clear());
+                }
+                string GinsorId = SearchBox.Text.ToUpper();
+                foreach (var id in GinsorIDList)
+                {
+                    if (id.ToUpper().Contains(GinsorId.ToUpper()))
                     {
-                        button.BringIntoView();
-                        button.IsChecked = true;
+                        bIsSearched = true;
+                        ToggleButton btn = new ToggleButton();
+                        Style style = Application.Current.Resources["Button_Command"] as Style;
+
+                        btn.Style = style;
+                        btn.HorizontalAlignment = HorizontalAlignment.Stretch;
+                        btn.VerticalAlignment = VerticalAlignment.Center;
+                        btn.Focusable = true;
+                        btn.Click += GinsButton_Click;
+                        btn.Height = 75;
+                        btn.Content = new TextBlock
+                        {
+                            Text = id + "\nIn Package " + dictlist[id].reference.package_id.ToString("X2") + "\nIn SegmentIDs: ",
+                            TextWrapping = TextWrapping.Wrap,
+                            FontSize = 13
+                        };
+                        foreach (uint segment_id in dictlist[id].SegmentIDs)
+                        {
+                            (btn.Content as TextBlock).Text += segment_id.ToString("X8") + " ";
+                        }
+                        btn.Background = new SolidColorBrush(System.Windows.Media.Color.FromRgb(61, 61, 61));
+                        btn.Foreground = new SolidColorBrush(System.Windows.Media.Color.FromRgb(230, 230, 230));
+                        SecondaryList.Children.Add(btn);
                     }
                 }
+                /*
+                if (GinsorIDList.Contains(GinsorId))
+                {
+                    bIsSearched = true;
+                    ToggleButton btn = new ToggleButton();
+
+                    btn.IsEnabled = true;
+                    btn.Focusable = true;
+                    btn.Click += GinsButton_Click;
+                    btn.Content = new TextBlock
+                    {
+                        Text = GinsorId + "\nIn Package " + dictlist[GinsorId].reference.package_id.ToString("X2") + "\nIn SegmentIDs: ",
+                        TextWrapping = TextWrapping.Wrap,
+                        FontSize = 13
+                    };
+                    foreach (uint segment_id in dictlist[GinsorId].SegmentIDs)
+                    {
+                        (btn.Content as TextBlock).Text += segment_id.ToString("X8") + " ";
+                    }
+
+                    SecondaryList.Children.Add(btn);
+                }
+                */
             }
         }
-
-        /*
-        private void ClearSearchButton_Click(object sender, RoutedEventArgs e)
-        {
-            SearchBox.Text = string.Empty;
-            ClearSearchButton.Visibility = Visibility.Hidden;
-            (sender as ToggleButton).IsChecked = false;
-        }
-
-        private void ClearSegmentSearchButton_Click(object sender, RoutedEventArgs e)
-        {
-            SegmentSearchBox.Text = string.Empty;
-            ClearSearchButton.Visibility = Visibility.Hidden;
-            (sender as ToggleButton).IsChecked = false;
-        }
-        */
-        /*
-        private void sldrPlaybackProgressChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
-        {
-            long newPos = vorbis.Position + (long)(vorbis.WaveFormat.AverageBytesPerSecond * sldrPlaybackProgress.Value);
-            //vorbis.Position += vorbis.WaveFormat.AverageBytesPerSecond;
-            if ((newPos % vorbis.WaveFormat.BlockAlign) != 0)
-                newPos -= newPos % vorbis.WaveFormat.BlockAlign;
-            newPos = Math.Max(0, Math.Min(vorbis.Length, newPos));
-            vorbis.Position = newPos;
-        }
-        */
 
         public void Export_Clicked(object sender, RoutedEventArgs e)
         {
@@ -797,8 +710,29 @@ namespace DestinyMusicViewer
                     }
                 }
             }
-
-            string gins_id = ((PrimaryList.Children[SelectedWemIndex] as ToggleButton).Content as TextBlock).Text.Split("\n")[0];
+            string gins_id = "";
+            if (seg)
+            {
+                gins_id = SegmentSearchBox.Text.ToUpper();
+            }
+            else if (PrimaryList.Children[SelectedWemIndex] != null)
+            {
+                gins_id = ((PrimaryList.Children[SelectedWemIndex] as ToggleButton).Content as TextBlock).Text.Split("\n")[0];
+            }
+            else if (SecondaryList.Children.Contains(sender as ToggleButton))
+            {
+                gins_id = ((SecondaryList.Children[SelectedWemIndex] as ToggleButton).Content as TextBlock).Text.Split("\n")[0];
+                if (!GinsorIDList.Contains(gins_id.ToUpper()))
+                {
+                    return;
+                }
+            }
+            else
+            {
+                //gins_id = ((PrimaryList.Children[SelectedWemIndex] as ToggleButton).Content as TextBlock).Text.Split("\n")[0];
+                gins_id = GinsorIDList[0];
+                Dispatcher.Invoke(() => log("No valid GinsorID selected, using first GinsorID."));
+            }
             string output_path = mainWindow.OutputPath + "\\" + gins_id;
             if (config.AppSettings.Settings["AudioFormat"] == null)
             {
@@ -811,7 +745,6 @@ namespace DestinyMusicViewer
                 {
                     writer.Write(wem_data, 0, wem_data.Length);
                 }
-                Dispatcher.Invoke(() => log($"did it work? {output_path}"));
             }
             else if (config.AppSettings.Settings["AudioFormat"].Value.ToString() == "Ogg")
             {
@@ -820,7 +753,6 @@ namespace DestinyMusicViewer
                 {
                     writer.Write(ogg_data, 0, ogg_data.Length);
                 }
-                Dispatcher.Invoke(() => log($"did it work? {output_path}"));
             }
             else if (config.AppSettings.Settings["AudioFormat"].Value.ToString() == "Wav")
             {
@@ -829,14 +761,16 @@ namespace DestinyMusicViewer
                 {
                     WaveFileWriter.CreateWaveFile(output_path + ".wav", vorbis);
                 }
-                Dispatcher.Invoke(() => log($"did it work? {output_path}"));
             }
             else
             {
                 MessageBox.Show("Audio format not supported");
             }
-            Dispatcher.Invoke(() => log($"did it work? {output_path}"));
-            (sender as ToggleButton).IsChecked = false;
+            Dispatcher.Invoke(() => log($"Exported to {output_path}.{config.AppSettings.Settings["AudioFormat"].Value.ToLower()}"));
+            if (((sender as ToggleButton).Content as TextBlock).Text.Contains("Selected"))
+            {
+                (sender as ToggleButton).IsChecked = false;
+            }
         }
 
         private void ExportWhenClickedOn_Clicked(object sender, RoutedEventArgs e)
@@ -844,30 +778,26 @@ namespace DestinyMusicViewer
             if (export == true)
             {
                 export = false;
-                (sender as ToggleButton).IsChecked = false;
+                Dispatcher.Invoke(() => (sender as ToggleButton).IsChecked = false);
             }
             else
             {
                 export = true;
-                (sender as ToggleButton).IsChecked = true;
+                Dispatcher.Invoke(() => (sender as ToggleButton).IsChecked = true);
             }
         }
 
-        private void GenScript_Click(object sender, RoutedEventArgs e)
+        private void ExportScript_Click(object sender, RoutedEventArgs e)
         {
             (sender as ToggleButton).IsChecked = false;
-            //TODO: Add logic to generate a script for each playlist(?) a segment is in (get back to it later)
+            //TODO: Add logic to export a script for each playlist(?) a segment is in (get back to it later)
         }
-
-        
+  
         private void ExportAllButton_Click(object sender, RoutedEventArgs e)
         {
-            //TODO: Add logic to export all music files in order.
-
             Configuration config = ConfigurationManager.OpenExeConfiguration(System.Windows.Forms.Application.ExecutablePath);
             if (mainWindow.OutputPath == string.Empty)
             {
-                //config.Save(ConfigurationSaveMode.Minimal);
                 if (config.AppSettings.Settings["OutputPath"] != null)
                 {
                     mainWindow.OutputPath = config.AppSettings.Settings["OutputPath"].Value;
@@ -889,51 +819,143 @@ namespace DestinyMusicViewer
                     }
                 }
             }
-            foreach (var dict_entry in dictlist)
+
+            ProcessStartInfo startInfo = new ProcessStartInfo();
+            startInfo.CreateNoWindow = false;
+            startInfo.UseShellExecute = false;
+            startInfo.FileName = "DestinyUnpackerCPP.exe";
+
+            startInfo.Arguments = "-p \"" + config.AppSettings.Settings["PackagesPath"].Value + "\" -o \"" + mainWindow.OutputPath + "\" -f -m -h ";
+            switch (config.AppSettings.Settings["AudioFormat"].Value.ToString())
             {
-                string output_path = mainWindow.OutputPath + "\\" + dict_entry.Key;
-                if (config.AppSettings.Settings["AudioFormat"] == null)
+                case "Wem":
+                    break;
+                case "Ogg":
+                    startInfo.Arguments += " -g ";
+                    break;
+                case "Wav":
+                    startInfo.Arguments += " -w ";
+                    break;
+                default:
+                    break;
+            }
+
+            try
+            {
+                Process exeProcess = Process.Start(startInfo);
+            }
+            catch (Exception ex)
+            {
+                Dispatcher.Invoke(() => log($"Error: {ex.Message}"));
+                MessageBox.Show("Error: " + ex.Message);
+            }
+            (sender as ToggleButton).IsChecked = false;
+        }
+
+        private void ExportAllInList_Click(object sender, RoutedEventArgs e)
+        {
+            for (int i = 0; i < SecondaryList.Children.Count; i++)
+            {
+                ToggleButton ListItem = SecondaryList.Children[i] as ToggleButton;
+                var item_text = (ListItem.Content as TextBlock).Text;
+                string id = item_text.Split("\n")[0];
+                if (GinsorIDList.Contains(id))
                 {
-                    config.AppSettings.Settings.Add("AudioFormat", "Wem");
-                }
-                if (config.AppSettings.Settings["AudioFormat"].Value.ToString().ToLower() == "wem")
-                {
-                    byte[] wem_data = extractor.extract_entry_data(dict_entry.Value.reference).data;
-                    using (var writer = new FileStream(output_path + ".wem", FileMode.Create))
-                    {
-                        writer.Write(wem_data, 0, wem_data.Length);
-                    }
-                }
-                else if (config.AppSettings.Settings["AudioFormat"].Value.ToString().ToLower() == "ogg")
-                {
-                    byte[] ogg_data = new Tiger.Parsers.RIFFAudioParser(dict_entry.Value.reference, extractor).Parse().data;
-                    using (var writer = new FileStream(output_path + ".ogg", FileMode.Create))
-                    {
-                        writer.Write(ogg_data, 0, ogg_data.Length);
-                    }
-                }
-                else if (config.AppSettings.Settings["AudioFormat"].Value.ToString().ToLower() == "wav")
-                {
-                    byte[] ogg_data = new Tiger.Parsers.RIFFAudioParser(dict_entry.Value.reference, extractor).Parse().data;
-                    using (var vorbis = new VorbisWaveReader(new MemoryStream(ogg_data)))
-                    {
-                        //WaveFileWriter.CreateWaveFile(output_path + ".wav", vorbis);
-                        MemoryStream OutputWavStream = new MemoryStream();
-                        WaveFileWriter.WriteWavFileToStream(OutputWavStream, vorbis);
-                        using (var writer = new FileStream(output_path + ".wav", FileMode.Create))
-                        {
-                            writer.Write(OutputWavStream.ToArray(), 0, OutputWavStream.ToArray().Length);
-                        }
-                    }
+                    SelectedWemIndex = i;
+                    Export_Clicked(ListItem, e);
                 }
                 else
                 {
-                    MessageBox.Show("Audio format not supported");
+                    ExportSegmentAudio();
                 }
-                Dispatcher.Invoke(() => log($"Exported {dict_entry.Key} to {output_path}.{config.AppSettings.Settings["AudioFormat"].Value.ToString().ToLower()}"));
-                //GC.Collect();
             }
-            (sender as ToggleButton).IsChecked = false;
+            Dispatcher.Invoke(() => (sender as ToggleButton).IsChecked = false);
+        }
+
+        private void ExportSegmentAudio()
+        {
+            List<VorbisWaveReader> VorbisReaders = new List<VorbisWaveReader>();
+            for (int i = 0; i < GinsorIdsInSegment.Count; i++)
+            {
+                var GinsorID = GinsorIdsInSegment[i];
+                byte[] ogg_data = new Tiger.Parsers.RIFFAudioParser(dictlist[GinsorID].reference, extractor).Parse().data;
+                VorbisWaveReader vorb = new VorbisWaveReader(new MemoryStream(ogg_data));
+                VorbisReaders.Add(vorb);
+            }
+            var mix2 = new MixingWaveProvider32(VorbisReaders.ToArray());
+            Configuration config = ConfigurationManager.OpenExeConfiguration(System.Windows.Forms.Application.ExecutablePath);
+            if (mainWindow.OutputPath == string.Empty)
+            {
+                if (config.AppSettings.Settings["OutputPath"] != null)
+                {
+                    mainWindow.OutputPath = config.AppSettings.Settings["OutputPath"].Value;
+                }
+                else
+                {
+                    using (var dialog = new System.Windows.Forms.FolderBrowserDialog())
+                    {
+                        dialog.Description = $"Select an output folder";
+                        System.Windows.Forms.DialogResult result = dialog.ShowDialog();
+                        if (dialog.SelectedPath == "")
+                        {
+                            MessageBox.Show("Directory selected is invalid, please select the correct packages directory.");
+                            return;
+                        }
+                        mainWindow.OutputPath = dialog.SelectedPath;
+                        config.AppSettings.Settings.Add("OutputPath", mainWindow.OutputPath);
+                        config.Save(ConfigurationSaveMode.Minimal);
+                    }
+                }
+            }
+            string id = ((SecondaryList.Children[SelectedWemIndex] as ToggleButton).Content as TextBlock).Text.Split("\n")[0].Split(' ')[2];
+            string output_path = mainWindow.OutputPath + "\\" + id;
+            WaveFileWriter.CreateWaveFile(output_path + ".wav", mix2);
+            Dispatcher.Invoke(() => log($"Exported segment to {output_path}.wav"));
+        }
+
+        private void PlaySegmentAudio(object sender, RoutedEventArgs e)
+        {
+            List<VorbisWaveReader> VorbisReaders = new List<VorbisWaveReader>();
+            for (int i = 0; i < GinsorIdsInSegment.Count; i++)
+            {
+                var GinsorID = GinsorIdsInSegment[i];
+                byte[] ogg_data = new Tiger.Parsers.RIFFAudioParser(dictlist[GinsorID].reference, extractor).Parse().data;
+                VorbisWaveReader vorb = new VorbisWaveReader(new MemoryStream(ogg_data));
+                VorbisReaders.Add(vorb);
+            }
+            double duration = VorbisReaders[0].Length / VorbisReaders[0].WaveFormat.AverageBytesPerSecond;
+            TrackInfoTextBlock.Text = "Track Info:\n    Length: " + duration.ToString("0.00") + "s";// + "\n" + vorbis.TrackCount.ToString();
+            var mixer = new MixingSampleProvider(VorbisReaders.ToArray());
+            try
+            {
+                waveOut.Dispose();
+                waveOut = new WaveOut();
+                waveOut.Init(mixer);
+                Dispatcher.Invoke(() => PlaybackProgressBar.Maximum = duration * 1000);
+                Dispatcher.Invoke(() => PlaybackProgressBar.Value = 0);
+
+                waveOut.Play();
+                Thread thread = new Thread(new ThreadStart(Run));
+                thread.Start();
+            }
+            catch (Exception ex)
+            {
+                Dispatcher.Invoke(() => log($"Error playing audio: {ex.Message}"));
+                MessageBox.Show("Error playing audio: " + ex.Message);
+            }
+            if (export)
+            {
+                ExportSegmentAudio();
+            }
+            Dispatcher.Invoke(() => (sender as ToggleButton).IsChecked = false);
+        }
+
+        private void PlaybackProgressBar_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            //Get current time in seconds from the NAudio waveOut stream.
+            //double pos = waveOut.GetPosition();
+            //PlaybackProgressBar.Value = (pos / music_len_sec) / 1000;
+            //log($"{(pos / music_len_sec) / 1000}");
         }
     }
 }

@@ -11,7 +11,8 @@
     <Grid Background="#FF424242">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="3*"/>
-            <ColumnDefinition Width="13*"/>
+            <ColumnDefinition Width="10*"/>
+            <ColumnDefinition Width="3*"/>
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
             <RowDefinition Height="39*"/>
@@ -25,13 +26,15 @@
                 <ToggleButton x:Name="SelectPkgsDirectoryButton" Style="{StaticResource ButtonStyle}" Content="Select Packages Directory" VerticalAlignment="Center" HorizontalAlignment="Center" Click="SelectPkgsDirectoryButton_Click" Margin="0,320,0,0" Height="30" Width="150"/>
             </StackPanel>
         </ScrollViewer>
-        <ToggleButton x:Name="SegmentDisplayButton" Style="{StaticResource Button_Command}" IsEnabled="False" Focusable="False" Background="#FF636363" BorderBrush="#FF636363" Foreground="#FFDDDDDD" Margin="22,10,8,41" RenderTransformOrigin="0,1" Grid.Row="1" />
-
         <!--
-        <ScrollViewer Name="SecondaryScrollView" Margin="0,510,0,18" Focusable="False" Background="#FF3D3D3D"/>
+        <ToggleButton Grid.Column="0" x:Name="DisplayButton" Style="{StaticResource Button_Command}" IsEnabled="False" Focusable="False" Background="#FF636363" BorderBrush="#FF636363" Foreground="#FFDDDDDD" Margin="15,151,15,26" RenderTransformOrigin="0,1" Grid.Row="2" />
+        -->
+        <ScrollViewer Name="SecondaryScrollView" Focusable="False" Background="#FF3D3D3D" Grid.Row="0" Grid.Column="2">
+            <StackPanel x:Name="SecondaryList" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Focusable="false">
+            </StackPanel>
+        </ScrollViewer>
         <Grid Margin="10,743,10,10" Background="#FF636363">
         </Grid>
-        -->
 
         <!--
         <ScrollViewer Foreground="{x:Null}" Grid.Row="1" Margin="0,0,0,5">
@@ -109,45 +112,47 @@
             </TextBox>
         </Grid>
         -->
-        <Grid HorizontalAlignment="Center" Width="1540" Height="200" VerticalAlignment="Center" Grid.Column="1" Grid.Row="2">
+        <Grid HorizontalAlignment="Center" Width="1180" Height="232" VerticalAlignment="Center" Grid.Column="1" Grid.Row="2">
             <ScrollViewer Name="logging_box_scroller">
                 <TextBlock x:Name="logging_box" Margin="0,-14,-2,-1" Text="" TextWrapping="Wrap" FontFamily="Consolas" Foreground="White" Background="{x:Null}" FontSize="10" IsEnabled="False" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto"/>
             </ScrollViewer>
         </Grid>
-        <Grid Grid.Row="2" Margin="14,10,0,10">
-            <ToggleButton x:Name="PlayPauseButton_Mimic" Style="{StaticResource Button_Command2}" Content="Play/Pause" VerticalAlignment="Top" HorizontalAlignment="Left" Click="PlayPauseButton_Click" Height="45" Width="100" FontSize="16" Margin="8,10,0,0" Background="#FF3D3D3D" Foreground="#FFDDDDDD"/>
-            <ToggleButton x:Name="StopButton_Mimic" Style="{StaticResource Button_Command2}" Content="Stop" VerticalAlignment="Top" HorizontalAlignment="Left" Click="StopButton_Click" Height="45" Width="100" FontSize="16" Margin="8,65,0,0" Background="#FF3D3D3D" Foreground="#FFDDDDDD"/>
+        <Grid Grid.Row="2" Grid.Column="0" Margin="14,10,0,10">
+            <ToggleButton x:Name="PlayPauseButton_Mimic" Style="{StaticResource Button_Command2}" Content="Play/Pause" VerticalAlignment="Top" HorizontalAlignment="Left" Click="PlayPauseButton_Click" Height="45" Width="160" FontSize="16" Margin="10,10,0,0" Background="#FF3D3D3D" Foreground="#FFDDDDDD"/>
+            <ToggleButton x:Name="StopButton_Mimic" Style="{StaticResource Button_Command2}" Content="Stop" VerticalAlignment="Top" HorizontalAlignment="Left" Click="StopButton_Click" Height="45" Width="160" FontSize="16" Margin="10,65,0,0" Background="#FF3D3D3D" Foreground="#FFDDDDDD"/>
             <!--
             <Slider x:Name="sldrPlaybackProgress" Minimum="0" Maximum="1" ValueChanged="sldrPlaybackProgressChanged"  HorizontalAlignment="Center" Margin="0,56,0,0" Grid.Row="1" VerticalAlignment="Top" Width="316" Foreground="#FFDDDDDD" Height="18" Visibility="Hidden"/>
             -->
-            <Slider x:Name="VolSlider" Minimum="0" Maximum="1" ValueChanged="VolSliderUpdated"  HorizontalAlignment="Center" Margin="0,196,0,0" VerticalAlignment="Top" Width="316" Foreground="#FFDDDDDD" Height="18" TickPlacement="None" Cursor="Hand"/>
+            <Slider x:Name="VolSlider" Minimum="0" Maximum="1" ValueChanged="VolSliderUpdated"  HorizontalAlignment="Center" Margin="0,196,0,0" VerticalAlignment="Top" Width="316" Foreground="#FFDDDDDD" Height="18" TickPlacement="None" Cursor="Hand" TickFrequency="20"/>
             <TextBlock HorizontalAlignment="Center" Margin="0,170,0,0" TextWrapping="Wrap" Text="Volume" VerticalAlignment="Top" Foreground="#FFDDDDDD" FontSize="16" RenderTransformOrigin="0.017,0.909" Height="21" Width="56"/>
-            <ToggleButton x:Name="ExportSelectedButton" Style="{StaticResource Button_Command2}" Content="Export Selected" VerticalAlignment="Top" HorizontalAlignment="Center" Click="Export_Clicked" Height="45" Width="120" FontSize="16" Margin="0,65,0,0" Background="#FF3D3D3D" Foreground="#FFDDDDDD"/>
-            <ToggleButton x:Name="ExportAllClickedAudio" Style="{StaticResource Button_Command2}" Content="Auto Export" VerticalAlignment="Top" HorizontalAlignment="Center" Click="ExportWhenClickedOn_Clicked" Height="45" Width="120" FontSize="16" Background="#FF3D3D3D" Foreground="#FFDDDDDD" Margin="0,117,0,0"/>
+            <ToggleButton x:Name="ExportSelectedButton" Style="{StaticResource Button_Command2}" Content="Export Selected" VerticalAlignment="Top" HorizontalAlignment="Left" Click="Export_Clicked" Height="45" Width="160" FontSize="16" Margin="176,65,0,0" Background="#FF3D3D3D" Foreground="#FFDDDDDD"/>
+            <ToggleButton x:Name="ExportAllClickedAudio" Style="{StaticResource Button_Command2}" Content="Auto Export" VerticalAlignment="Top" HorizontalAlignment="Left" Click="ExportWhenClickedOn_Clicked" Height="45" Width="160" FontSize="16" Background="#FF3D3D3D" Foreground="#FFDDDDDD" Margin="176,120,0,0"/>
             <!--
             <Button x:Name="ClearSearchButton" Content="Button" HorizontalAlignment="Left" Margin="246,10,0,0" VerticalAlignment="Top" Height="45" Width="90" Click="ClearSearchButton_Click" Opacity="0"/>
             <TextBox x:Name="SearchBox" Text="Search for Ginsor ID" Margin="246,10,0,0" HorizontalAlignment="Left" TextWrapping="Wrap" VerticalAlignment="Top" Width="90" Height="45" TextAlignment="Center" Background="{x:Null}" Foreground="#FFDDDDDD" KeyDown="SearchBox_KeyDown" BorderBrush="White" MouseDown="SearchBox_MouseDown"/>
             -->
-            <xctk:WatermarkTextBox Watermark="Search for Ginsor ID" x:Name="SearchBox" Margin="8,-40,0,0" HorizontalAlignment="Left" TextWrapping="Wrap" VerticalAlignment="Top" Width="160" Height="45" TextAlignment="Center" Background="{x:Null}" Foreground="White" BorderBrush="White" KeyDown="SearchBox_KeyDown"/>
-            <xctk:WatermarkTextBox Watermark="Search for Segment ID" x:Name="SegmentSearchBox" Margin="178,-40,0,0" HorizontalAlignment="Left" TextWrapping="Wrap" VerticalAlignment="Top" Width="160" Height="45" TextAlignment="Center" Background="{x:Null}" Foreground="White" BorderBrush="White" KeyDown="SegmentSearchBox_KeyDown"/>
+            <xctk:WatermarkTextBox Watermark="Search for Ginsor ID" x:Name="SearchBox" Margin="10,-45,0,0" HorizontalAlignment="Left" TextWrapping="Wrap" VerticalAlignment="Top" Width="160" Height="45" TextAlignment="Center" Background="{x:Null}" Foreground="White" BorderBrush="White" KeyDown="SearchBox_KeyDown"/>
+            <xctk:WatermarkTextBox Watermark="Search for Segment ID" x:Name="SegmentSearchBox" Margin="176,-46,0,0" HorizontalAlignment="Left" TextWrapping="Wrap" VerticalAlignment="Top" Width="160" Height="45" TextAlignment="Center" Background="{x:Null}" Foreground="White" BorderBrush="White" KeyDown="SegmentSearchBox_KeyDown"/>
             <!--
             <TextBox x:Name="SegmentSearchBox" HorizontalAlignment="Left" Margin="246,65,0,0" TextWrapping="Wrap" Text="Search for Segment ID" VerticalAlignment="Top" Width="90" Height="45" TextAlignment="Center" Background="{x:Null}" Foreground="#FFDDDDDD" KeyDown="SegmentSearchBox_KeyDown" BorderBrush="White" MouseDown="SegmentSearchBox_MouseDown"/>
             <Button x:Name="ClearSegmentSearchButton" Content="Button" HorizontalAlignment="Left" Margin="246,10,0,0" VerticalAlignment="Top" Height="45" Width="90" Click="ClearSegmentSearchButton_Click" Opacity="0"/>
             -->
-            <ToggleButton x:Name="GenerateScriptButton" Style="{StaticResource Button_Command2}" Content="Generate Script" VerticalAlignment="Top" HorizontalAlignment="Center" Click="GenScript_Click" Height="45" Width="120" FontSize="16" Margin="0,10,0,0" Background="#FF3D3D3D" Foreground="#FFDDDDDD"/>
-            <ToggleButton x:Name="ExportAllButton" Style="{StaticResource Button_Command2}" Content="Export All" VerticalAlignment="Top" HorizontalAlignment="Left" Height="44" Width="100" FontSize="16" Margin="8,118,0,0" Background="#FF3D3D3D" Foreground="#FFDDDDDD" Click="ExportAllButton_Click"/>
+            <ToggleButton x:Name="ExportScriptButton" Style="{StaticResource Button_Command2}" Content="Export Script" VerticalAlignment="Top" HorizontalAlignment="Left" Click="ExportScript_Click" Height="45" Width="160" FontSize="16" Margin="176,10,0,0" Background="#FF3D3D3D" Foreground="#FFDDDDDD"/>
+            <ToggleButton x:Name="ExportAllButton" Style="{StaticResource Button_Command2}" Content="Export All" VerticalAlignment="Top" HorizontalAlignment="Left" Height="45" Width="160" FontSize="16" Margin="10,120,0,0" Background="#FF3D3D3D" Foreground="#FFDDDDDD" Click="ExportAllButton_Click"/>
+            <!--
             <ToggleButton x:Name="UnkButton3" Style="{StaticResource Button_Command2}" Content="UnkButton3" VerticalAlignment="Top" HorizontalAlignment="Left" Height="44" Width="100" FontSize="16" Margin="238,118,0,0" Background="#FF3D3D3D" Foreground="#FFDDDDDD"/>
+            -->
         </Grid>
         <Grid x:Name="ScriptBox" Grid.Column="1" Grid.RowSpan="2">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition/>
-                <ColumnDefinition/>
-            </Grid.ColumnDefinitions>
             <TextBlock x:Name="TrackInfoTextBlock" HorizontalAlignment="Left" Margin="10,10,0,0" TextWrapping="Wrap" Text="Track Info:" VerticalAlignment="Top" Foreground="#FFDDDDDD" FontSize="16" Height="350" Width="200"/>
             <!--
             <TextBlock HorizontalAlignment="Center" TextWrapping="Wrap" Text="" VerticalAlignment="Center" Height="808" Width="760" Foreground="#FFDDDDDD" Grid.Column="1"/>
             -->
-
         </Grid>
+        <ToggleButton x:Name="ExportAllInSecondaryList" Style="{StaticResource Button_Command2}" Content="Export All In List" VerticalAlignment="Top" HorizontalAlignment="Left" Click="ExportAllInList_Click" Height="45" Width="160" FontSize="16" Margin="10,10,0,0" Background="#FF3D3D3D" Foreground="#FFDDDDDD" Grid.Column="2" Grid.Row="2"/>
+        <!--
+        <Slider x:Name="PlaybackProgressBar" HorizontalAlignment="Center" Margin="0,41,0,0" Grid.Row="1" VerticalAlignment="Top" Width="340" IsEnabled="False"/>
+        -->
+        <ProgressBar x:Name="PlaybackProgressBar" IsEnabled="False" HorizontalAlignment="Center" Height="25" Margin="0,32,0,0" Grid.Row="1" VerticalAlignment="Top" Width="360"/>
     </Grid>
 </UserControl>

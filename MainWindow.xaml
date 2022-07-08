@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:DestinyMusicViewer"
         mc:Ignorable="d"
-        Title="Destiny Music Script Viewer" Height="1080" Width="1920" Background="White">
+        Title="Destiny Music Viewer" Height="1080" Width="1920" Background="White">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="100*"/>
@@ -40,8 +40,11 @@
             <TabItem Header="Home" x:Name="HomeViewTab" BorderBrush="{x:Null}" Background="{x:Null}" Foreground="Black" >
                 <local:HomeView  x:Name="HomeViewItem"/>
             </TabItem>
-            -->
             <TabItem Header="Bank Viewer" x:Name="BnkViewTab" BorderBrush="{x:Null}" Background="{x:Null}" Foreground="Black">
+                <local:BnkView  x:Name="BnkViewItem"/>
+            </TabItem>
+            -->
+            <TabItem Header="Home" x:Name="BnkViewTab" BorderBrush="{x:Null}" Background="{x:Null}" Foreground="Black">
                 <local:BnkView  x:Name="BnkViewItem"/>
             </TabItem>
         </TabControl>
