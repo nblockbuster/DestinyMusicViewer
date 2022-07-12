@@ -747,6 +747,31 @@ namespace DestinyMusicViewer
                 ginsid_entry.reference = Utils.generate_reference_hash(pkg.package_id, idx);
                 ginsid_entry.SegmentIDs = SegmentIds;
                 dictlist[gins] = ginsid_entry;
+
+
+                ToggleButton btn = new ToggleButton();
+                Style style = Application.Current.Resources["Button_Command"] as Style;
+
+                btn.Style = style;
+                btn.HorizontalAlignment = HorizontalAlignment.Stretch;
+                btn.VerticalAlignment = VerticalAlignment.Center;
+                btn.Content = new TextBlock
+                {
+                    Text = gins + "\nIn Package " + dictlist[gins].reference.package_id.ToString("X2") + "\nIn SegmentIDs: ",
+                    TextWrapping = TextWrapping.Wrap,
+                    FontSize = 13
+                };
+                btn.Background = new SolidColorBrush(Color.FromRgb(61, 61, 61));
+                btn.Foreground = new SolidColorBrush(Color.FromRgb(230, 230, 230));
+                btn.Height = 75;
+                btn.Width = 320;
+                btn.Focusable = true;
+                btn.Click += GinsButton_Click;
+                foreach (uint segment_id in dictlist[gins].SegmentIDs)
+                {
+                    (btn.Content as TextBlock).Text += segment_id.ToString("X8") + " ";
+                }
+                Dispatcher.Invoke(() => PrimaryList.Items.Add(btn));
             }
 
             var json = JsonConvert.SerializeObject(dictlist, Formatting.Indented);
@@ -754,7 +779,7 @@ namespace DestinyMusicViewer
             File.WriteAllLines("OSTs.db", GinsorIDList);
             Dispatcher.Invoke(() => log("Loading..."));
             Dispatcher.Invoke(() => PrimaryList.Items.Clear());
-            ShowList();
+            //ShowList();
             Dispatcher.Invoke(() => log("All loaded."));
             MessageBox.Show("Done regenerating music list.");
             Dispatcher.Invoke(() => RegenerateListButton.IsChecked = false);
