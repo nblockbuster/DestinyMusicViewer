@@ -121,33 +121,6 @@ namespace DestinyMusicViewer
                     }
                 }
             }
-            
-            /*
-            List<uint> PackageIDs = new List<uint>();
-            if (File.Exists("REF_OST.db"))
-            {
-                Dispatcher.Invoke(() => log("Found REF_OST.db file."));
-                long length = new FileInfo("REF_OST.db").Length;
-                if (length == 0)
-                {
-                    Dispatcher.Invoke(() => log("REF_OST.db empty."));
-                }
-                Dispatcher.Invoke(() => log("Loading..."));
-                List<string> ref_strings = File.ReadAllLines("REF_OST.db").ToList();
-                foreach (string line in ref_strings)
-                {
-                    var entry_ref = new Utils.EntryReference(Utils.ReverseBytes(Convert.ToUInt32(line, 16)));
-                    PackageIDs.Add(entry_ref.package_id);
-                    var ginsid = extractor.get_entry_reference_str(line);
-                    dictlist[ginsid] = new GinsorIdEntry()
-                    {
-                        reference = entry_ref,
-                        SegmentIDs = new List<uint>()
-                    };
-                }
-                SelectPkgsDirectoryButton.Visibility = Visibility.Hidden;
-            }
-            */
         }
 
         public void ShowList()
@@ -308,7 +281,7 @@ namespace DestinyMusicViewer
         {
             while (true)
             {
-                Debug.WriteLine("PlaybackState: " + waveOut.PlaybackState);
+                //Debug.WriteLine("PlaybackState: " + waveOut.PlaybackState);
 
                 if (waveOut.PlaybackState == PlaybackState.Playing)
                 {
@@ -338,21 +311,10 @@ namespace DestinyMusicViewer
                     packages_path = config.AppSettings.Settings["PackagesPath"].Value;
                     extractor = new Extractor(packages_path, LoggerLevels.HighVerbouse);
                     Dispatcher.Invoke(() => log("Loading..."));
-                    /*
                     LoadList();
-                    List<ToggleButton> ToggleList = new List<ToggleButton>();
-                    Thread thread = new Thread(() => ShowList(ref ToggleList));
-                    thread.IsBackground = true;
-                    thread.SetApartmentState(ApartmentState.STA);
-                    thread.Start();
-
-                    foreach (ToggleButton btn in ToggleList)
-                    {
-                        PrimaryList.Children.Add(btn);
-                    }
-                    Dispatcher.Invoke(() => ScrollView.ScrollToTop());
+                    Dispatcher.Invoke(() => PrimaryList.Items.Clear());
+                    ShowList();
                     Dispatcher.Invoke(() => log("All loaded."));
-                    */
                 }
             }
         }
@@ -724,9 +686,9 @@ namespace DestinyMusicViewer
             }
             double duration = VorbisReaders[0].Length / VorbisReaders[0].WaveFormat.AverageBytesPerSecond;
             TrackInfoTextBlock.Text = "Track Info:\n    Length: " + duration.ToString("0.00") + "s";
-            var mixer = new MixingSampleProvider(VorbisReaders.ToArray());
             try
             {
+                var mixer = new MixingSampleProvider(VorbisReaders.ToArray());
                 waveOut.Dispose();
                 waveOut = new WaveOut();
                 waveOut.Init(mixer);
@@ -775,8 +737,8 @@ namespace DestinyMusicViewer
                 }
             }
 
-            var uniq = GinsorIDList.Distinct().ToList();
-            foreach (string gins in uniq.ToArray())
+            GinsorIDList = GinsorIDList.Distinct().ToList();
+            foreach (string gins in GinsorIDList.ToArray())
             {
                 List<uint> SegmentIds = id_to_segment[gins].Distinct().ToList();
                 uint idx = 0;
@@ -789,9 +751,13 @@ namespace DestinyMusicViewer
 
             var json = JsonConvert.SerializeObject(dictlist, Formatting.Indented);
             File.WriteAllText("GinsorID_ref_dict.json", json);
-            File.WriteAllLines("OSTs.db", uniq);
-            LoadList();
+            File.WriteAllLines("OSTs.db", GinsorIDList);
+            Dispatcher.Invoke(() => log("Loading..."));
+            Dispatcher.Invoke(() => PrimaryList.Items.Clear());
+            ShowList();
+            Dispatcher.Invoke(() => log("All loaded."));
             MessageBox.Show("Done regenerating music list.");
+            Dispatcher.Invoke(() => RegenerateListButton.IsChecked = false);
         }
 
         public List<string> genList(byte[] soundBankData, ref Dictionary<string, List<uint>> id_to_segment)
@@ -844,28 +810,6 @@ namespace DestinyMusicViewer
             }
             return GinsorIDs;
         }
-        /*
-        private void ScrollView_ScrollChanged(object sender, ScrollChangedEventArgs e)
-        {
-            var scrollViewer = (ScrollViewer)sender;
-            if (scrollViewer.VerticalOffset == scrollViewer.ScrollableHeight)
-                LoadMore();
-        }
 
-        public void LoadMore()
-        {
-            Dispatcher.Invoke(() => ScrollView.);
-            for (var i = PrimaryList.Children.Count; i < PrimaryList.Children.Count + 1024; i++)
-            {
-                if (i >= pub_ToggleList.Count())
-                    return;
-                
-                ToggleButton btn = pub_ToggleList[i];
-                //Debug.WriteLine(btn.Dispatcher.CheckAccess());
-                Dispatcher.Invoke(() => PrimaryList.Children.Add(btn));
-            }
-            Dispatcher.Invoke(() => ScrollView.IsEnabled = true);
-        }
-        */
     }
 }
