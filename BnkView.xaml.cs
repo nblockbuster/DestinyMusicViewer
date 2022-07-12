@@ -12,7 +12,10 @@ using System.Windows.Media;
 using System.Net;
 using System.Configuration;
 using System.Diagnostics;
+using System.Windows.Media.Animation;
+using System.Windows.Threading;
 using NAudio.Wave;
+using NAudio.Wave.SampleProviders;
 using NAudio.Vorbis;
 using Tiger;
 using Tiger.Formats;
@@ -20,9 +23,7 @@ using WwiseParserLib.Structures.Chunks;
 using WwiseParserLib.Structures.Objects.HIRC;
 using WwiseParserLib.Structures.SoundBanks;
 using WwiseParserLib;
-using NAudio.Wave.SampleProviders;
-using System.Windows.Media.Animation;
-using System.Windows.Threading;
+using Newtonsoft.Json;
 
 namespace DestinyMusicViewer
 {
@@ -38,25 +39,18 @@ namespace DestinyMusicViewer
 
         }
 
-        //private static string cache_location = "packages_path.txt";
         private static string packages_path;
         private static Extractor extractor;
         public Dictionary<string, GinsorIdEntry> dictlist = new Dictionary<string, GinsorIdEntry>();
         public List<string> GinsorIDList = new List<string>();
-        //public List<Package> Packages = new List<Package>();
-        //Dictionary<uint, List<uint>> pkg_bnks_dict = new Dictionary<uint, List<uint>>();
         private MainWindow mainWindow = null;
         private static WaveOut waveOut = new WaveOut();
-        public ConcurrentDictionary<string, Package> Packages = new ConcurrentDictionary<string, Package>();
         string CurrentGinsorId;
         int SelectedWemIndex = 0;
         bool export = false;
         bool seg = false;
         bool bIsSearched = false;
         VorbisWaveReader vorbis;
-
-        //private uint selected_packageid;
-        //private uint selected_entry_index;
 
         public void log(string message)
         {
@@ -74,6 +68,7 @@ namespace DestinyMusicViewer
         {
             InitializeComponent();
         }
+
         private void OnControlLoaded(object sender, RoutedEventArgs e)
         {
             mainWindow = Window.GetWindow(this) as MainWindow;
@@ -86,16 +81,15 @@ namespace DestinyMusicViewer
 
         private void InitialiseConfig()
         {
-            // Check for package path and load the list
             if (mainWindow.config.AppSettings.Settings["PackagesPath"] != null)
             {
                 SelectPkgsDirectoryButton.Visibility = Visibility.Hidden;
                 Configuration config = ConfigurationManager.OpenExeConfiguration(System.Windows.Forms.Application.ExecutablePath);
                 packages_path = config.AppSettings.Settings["PackagesPath"].Value;
                 extractor = new Extractor(packages_path, LoggerLevels.HighVerbouse);
-                //initialize();
-                //GenPkgList();
+                Dispatcher.Invoke(() => log("Loading..."));
                 LoadList();
+                Dispatcher.Invoke(() => PrimaryList.Items.Clear());
                 ShowList();
                 Dispatcher.Invoke(() => log("All loaded."));
             }
@@ -107,6 +101,7 @@ namespace DestinyMusicViewer
 
         private void LoadList()
         {
+            
             List<uint> PackageIDs = new List<uint>();
             if (File.Exists("GinsorID_ref_dict.json"))
             {
@@ -116,94 +111,47 @@ namespace DestinyMusicViewer
                 {
                     Dispatcher.Invoke(() => log("GinsorID_ref_dict.json empty."));
                 }
-                Dispatcher.Invoke(() => log("Loading..."));
-                dictlist = Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<string, GinsorIdEntry>>(File.ReadAllText("GinsorID_ref_dict.json"));
-                foreach (var entry in dictlist)
+                dictlist = JsonConvert.DeserializeObject<Dictionary<string, GinsorIdEntry>>(File.ReadAllText("GinsorID_ref_dict.json"));
+                Dispatcher.Invoke(() => SelectPkgsDirectoryButton.Visibility = Visibility.Hidden);
+                if (GinsorIDList.Count == 0)
                 {
-                    PackageIDs.Add(entry.Value.reference.package_id);
-                }
-                var uniq = PackageIDs.Distinct().ToList();
-                foreach (Package pkg in extractor.master_packages_stream())
-                {
-                    if (uniq.Contains(pkg.package_id))
+                    foreach (var entry in dictlist)
                     {
-                        Packages.AddOrUpdate(pkg.no_patch_id_name, pkg, (Key, OldValue) => OldValue);
+                        GinsorIDList.Add(entry.Key);
                     }
                 }
-                SelectPkgsDirectoryButton.Visibility = Visibility.Hidden;
-                foreach (var entry in dictlist)
-                {
-                    GinsorIDList.Add(entry.Key);
-                }
-                //initialize();
             }
-        }
-
-        /*
-        private void LoadList()
-        {
-            if (File.Exists("GinsorID_ref_dict.json"))
+            
+            /*
+            List<uint> PackageIDs = new List<uint>();
+            if (File.Exists("REF_OST.db"))
             {
-                SelectPkgsDirectoryButton.Visibility = Visibility.Hidden;
-                long length = new FileInfo("GinsorID_ref_dict.json").Length;
+                Dispatcher.Invoke(() => log("Found REF_OST.db file."));
+                long length = new FileInfo("REF_OST.db").Length;
                 if (length == 0)
                 {
-                    log("GinsorID_ref_dict.json empty.");
-                    initialize();
+                    Dispatcher.Invoke(() => log("REF_OST.db empty."));
                 }
-                Dispatcher.Invoke(() => log("Found GinsorID_ref_dict.json file."));
                 Dispatcher.Invoke(() => log("Loading..."));
-                //dictlist = Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<string, GinsorIdEntry>>(File.ReadAllText("GinsorID_ref_dict.json"));
-                foreach (var entry in dictlist)
+                List<string> ref_strings = File.ReadAllLines("REF_OST.db").ToList();
+                foreach (string line in ref_strings)
                 {
-                    GinsorIDList.Add(entry.Key);
-                }
-                Dispatcher.Invoke(() => log("Initializing extractor object"));
-                Dispatcher.Invoke(() => log("Extractor initialized"));
-            }
-            else
-            {
-                List<string> GinsorIDs = new List<string>();
-                Dispatcher.Invoke(() => log("Initializing extractor object"));
-                extractor = new Extractor(packages_path, LoggerLevels.HighVerbouse);
-                foreach (Package package in extractor.master_packages_stream())
-                {
-                    if (!package.no_patch_id_name.Contains("audio"))
+                    var entry_ref = new Utils.EntryReference(Utils.ReverseBytes(Convert.ToUInt32(line, 16)));
+                    PackageIDs.Add(entry_ref.package_id);
+                    var ginsid = extractor.get_entry_reference_str(line);
+                    dictlist[ginsid] = new GinsorIdEntry()
                     {
-                        continue;
-                    }
-                    for (int entry_index = 0; entry_index < package.entry_table().Count; entry_index++)
-                    {
-                        Entry entry = package.entry_table()[entry_index];
-                        if (entry.type == 26 && entry.subtype == 6)
-                        {
-                            byte[] bnkData = extractor.extract_entry_data(package, entry).data;
-                            foreach (string gins in genList(bnkData))
-                            {
-                                GinsorIDs.Add(gins);
-                            }
-                        }
-                    }
+                        reference = entry_ref,
+                        SegmentIDs = new List<uint>()
+                    };
                 }
-                GC.Collect();
-                if (GinsorIDs.Count == 0)
-                {
-                    throw new Exception("GinsorID table empty?");
-                }
-                var UniqueGinsorIDs = GinsorIDs.Distinct();
-                Dispatcher.Invoke(() => log($"Raw GinsorID List Count: {GinsorIDs.Count} || Unique GinsorID List Count: {UniqueGinsorIDs.ToList().Count}"));
-                File.WriteAllLines("OSTs.db", UniqueGinsorIDs);
-                Dispatcher.Invoke(() => log($"Music Track Amount: {UniqueGinsorIDs.Count()}"));
-                Configuration config = ConfigurationManager.OpenExeConfiguration(System.Windows.Forms.Application.ExecutablePath);
-                config.Save(ConfigurationSaveMode.Minimal);
+                SelectPkgsDirectoryButton.Visibility = Visibility.Hidden;
             }
+            */
         }
-        */
 
         public void ShowList()
         {
-            PrimaryList.Children.Clear();
-            
             foreach (string GinsorId in GinsorIDList)
             {
                 ToggleButton btn = new ToggleButton();
@@ -221,15 +169,15 @@ namespace DestinyMusicViewer
                 btn.Background = new SolidColorBrush(Color.FromRgb(61, 61, 61));
                 btn.Foreground = new SolidColorBrush(Color.FromRgb(230, 230, 230));
                 btn.Height = 75;
+                btn.Width = 320;
                 btn.Focusable = true;
                 btn.Click += GinsButton_Click;
-                Dispatcher.Invoke(() => PrimaryList.Children.Add(btn));
                 foreach (uint segment_id in dictlist[GinsorId].SegmentIDs)
                 {
                     (btn.Content as TextBlock).Text += segment_id.ToString("X8") + " ";
                 }
+                Dispatcher.Invoke(() => PrimaryList.Items.Add(btn));
             }
-            Dispatcher.Invoke(() => ScrollView.ScrollToTop());
         }
 
         private void GinsButton_Click(object sender, RoutedEventArgs e)
@@ -243,7 +191,7 @@ namespace DestinyMusicViewer
         {
             if (!bIsSearched)
             {
-                SelectedWemIndex = PrimaryList.Children.IndexOf(sender as ToggleButton);   
+                SelectedWemIndex = PrimaryList.Items.IndexOf(sender as ToggleButton);   
             }
 
             ClickPlay(GinsorId, sender, e);
@@ -262,7 +210,7 @@ namespace DestinyMusicViewer
         {
             string gins_id = GinsorId.Split("\n")[0];
 
-            foreach (ToggleButton button in PrimaryList.Children)
+            foreach (ToggleButton button in PrimaryList.Items)
             {
                 Dispatcher.Invoke(() => button.IsChecked = false);
             }
@@ -329,7 +277,7 @@ namespace DestinyMusicViewer
             else if (waveOut.PlaybackState == PlaybackState.Paused)
             {
                 waveOut.Play();
-                (sender as ToggleButton).IsChecked = false;
+                Dispatcher.Invoke(() => (sender as ToggleButton).IsChecked = false);
             }
         }
         
@@ -352,7 +300,7 @@ namespace DestinyMusicViewer
             }
             catch (Exception ex)
             {
-                log("Error Playing the audio");
+                Dispatcher.Invoke(() => log($"Error playing audio: {ex.Message}"));
             }
         }
 
@@ -364,14 +312,10 @@ namespace DestinyMusicViewer
 
                 if (waveOut.PlaybackState == PlaybackState.Playing)
                 {
-                    //Debug.WriteLine("Bytes played: " + waveOut.GetPosition());
-
                     double ms = (waveOut.GetPosition() * 1000) / waveOut.OutputWaveFormat.BitsPerSample / waveOut.OutputWaveFormat.Channels * 8 / waveOut.OutputWaveFormat.SampleRate;
                     Dispatcher.Invoke(() => PlaybackProgressBar.Value = ms);
-                    //Debug.WriteLine("Milliseconds Played: " + ms);
                 }
-
-                Thread.Sleep(200);
+                Thread.Sleep(120);
             }
         }
 
@@ -393,26 +337,26 @@ namespace DestinyMusicViewer
                     Configuration config = ConfigurationManager.OpenExeConfiguration(System.Windows.Forms.Application.ExecutablePath);
                     packages_path = config.AppSettings.Settings["PackagesPath"].Value;
                     extractor = new Extractor(packages_path, LoggerLevels.HighVerbouse);
-                    //GenPkgList();
-                    //initialize();
+                    Dispatcher.Invoke(() => log("Loading..."));
+                    /*
                     LoadList();
-                    ShowList();
+                    List<ToggleButton> ToggleList = new List<ToggleButton>();
+                    Thread thread = new Thread(() => ShowList(ref ToggleList));
+                    thread.IsBackground = true;
+                    thread.SetApartmentState(ApartmentState.STA);
+                    thread.Start();
+
+                    foreach (ToggleButton btn in ToggleList)
+                    {
+                        PrimaryList.Children.Add(btn);
+                    }
+                    Dispatcher.Invoke(() => ScrollView.ScrollToTop());
+                    Dispatcher.Invoke(() => log("All loaded."));
+                    */
                 }
             }
         }
-
-        private void initialize()
-        {
-            var t = Task.Run(() =>
-            {
-                Dispatcher.Invoke(() => log("Initializing extractor object"));
-                extractor = new Extractor(packages_path, LoggerLevels.HighVerbouse);
-                Dispatcher.Invoke(() => log("Extractor initialized"));
-
-                Dispatcher.Invoke(() => log("Building package database"));
-            });
-        }
-
+        
         private bool SetPackagePath(string Path)
         {
             if (Path == "")
@@ -438,126 +382,6 @@ namespace DestinyMusicViewer
             config.Save(ConfigurationSaveMode.Minimal);
             packages_path = Path;
             return true;
-        }
-
-        /*
-        private void updateOSTDB_buttonOnClick(object sender, RoutedEventArgs e)
-    {
-        List<string> GinsorIDs = new List<string>();
-        Dispatcher.Invoke(() => log($"Generating new OSTs.db and comparing."));
-        foreach (Package package in extractor.master_packages_stream())
-        {
-            if (!package.no_patch_id_name.Contains("audio") || package.no_patch_id_name.Contains("_en"))
-            {
-                continue;
-            }
-
-            Dispatcher.Invoke(() => log($"Analysing {package.no_patch_id_name}"));
-
-            for (int entry_index = 0; entry_index < package.entry_table().Count; entry_index++)
-            {
-                Entry entry = package.entry_table()[entry_index];
-                if (entry.type != 26 && entry.subtype != 6)
-                {
-                    continue;
-                }
-                //Dispatcher.Invoke(() => log($"\t|-{Utils.entry_name(package.package_id, (uint)entry_index)}"));
-                GinsorIDs = GetAllGinsorIDsInBank(package.package_id, entry.entry_index);
-            }
-        }
-        if (GinsorIDs.Count == 0)
-        {
-            Dispatcher.Invoke(() => log("GinsorID table empty!"));
-            return;
-            //MessageBox.Show("GinsorID Table Empty!", "No Wems Found!", MessageBoxButton.OK, MessageBoxImage.Error);
-            //throw new Exception("GinsorID table empty?");
-        }
-        var UniqueGinsorIDs = GinsorIDs.Distinct();
-        File.WriteAllLines("OSTs.db", UniqueGinsorIDs);
-        Dispatcher.Invoke(() => log("Comparing OSTs.db.old to OSTs.db."));
-
-        if (!File.Exists("OSTs.db.old"))
-        {
-            Dispatcher.Invoke(() => log("OSTs.db.old does not exist."));
-            return;
-        }
-        List<string> GinsorID_New = new List<string>();
-        List<string> GinsorID_Removed = new List<string>();
-        string[] Old_OSTs_Lines;
-        Old_OSTs_Lines = File.ReadAllLines("OSTs.db.old");
-        foreach (string new_ginsid in UniqueGinsorIDs)
-        {
-            if (!Old_OSTs_Lines.Contains(new_ginsid))
-            {
-                GinsorID_New.Add($"+++ {new_ginsid}");
-            }
-
-        }
-        foreach (string old_ginsid in Old_OSTs_Lines)
-        {
-            if (!UniqueGinsorIDs.Contains(old_ginsid))
-            {
-                GinsorID_Removed.Add($"--- {old_ginsid}");
-            }
-        }
-        File.WriteAllLines("modified.txt", GinsorID_New);
-        File.AppendAllLines("modified.txt", GinsorID_Removed);
-        Dispatcher.Invoke(() => log("Removed and Added GinsorIDs stored in 'modified.txt'"));
-    }
-        */
-        public List<string> GetAllGinsorIDsInBank(uint package_id, uint entry_index)
-        {
-            List<string> GinsorIDs = new List<string>();
-            Tiger.Parsers.ParsedFile parsedFile;
-            parsedFile = extractor.extract_entry_data(package_id, (int)entry_index);
-            byte[] soundBankData = parsedFile.data;
-            SoundBank memSoundBank = new InMemorySoundBank(soundBankData);
-            var bkhd = memSoundBank.ParseChunk(SoundBankChunkType.BKHD);
-            if (bkhd == null)
-            {
-                Dispatcher.Invoke(() => log($"{Utils.entry_name(package_id, (uint)entry_index)} does not have a valid Soundbank header."));
-            }
-            var hirc = memSoundBank.GetChunk(SoundBankChunkType.HIRC);
-            if (hirc == null)
-            {
-                Dispatcher.Invoke(() => log($"{Utils.entry_name(package_id, (uint)entry_index)} does not have a valid Hierarchy header."));
-            }
-
-            var musicObjs = (hirc as SoundBankHierarchyChunk).Objects
-                .Where(o => o is MusicObject)
-                .Select(o => o as MusicObject);
-
-            foreach (var obj in musicObjs)
-            {
-                if (obj.Type == HIRCObjectType.MusicSegment)
-                {
-                    var segment = obj as MusicSegment;
-                    for (int i = 0; i < segment.ChildCount; i++)
-                    {
-                        foreach (var srch_obj in musicObjs)
-                        {
-                            if (srch_obj.Id == segment.ChildIds[i])
-                            {
-                                var track = srch_obj as MusicTrack;
-                                for (int x = 0; x < track.SoundCount; x++)
-                                {
-                                    var sound = track.Sounds[x];
-                                    var ginsid = ((uint)IPAddress.NetworkToHostOrder((int)sound.AudioId)).ToHex().ToUpper();
-                                    //Console.WriteLine($"GinsorID of track {track.Id} (Parent Segment: {segment.Id}): {ginsid}");
-                                    GinsorIDs.Add(ginsid);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            if (GinsorIDs.Count == 0)
-            {
-                Dispatcher.Invoke(() => log("GinsorID table empty?"));
-            }
-            var UniqueGinsorIDs = GinsorIDs.Distinct();
-            Dispatcher.Invoke(() => log($"Music Track Amount: {UniqueGinsorIDs.Count()}"));
-            return UniqueGinsorIDs.ToList();
         }
         
         private void SegmentSearchBox_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
@@ -652,34 +476,11 @@ namespace DestinyMusicViewer
                         {
                             (btn.Content as TextBlock).Text += segment_id.ToString("X8") + " ";
                         }
-                        btn.Background = new SolidColorBrush(System.Windows.Media.Color.FromRgb(61, 61, 61));
-                        btn.Foreground = new SolidColorBrush(System.Windows.Media.Color.FromRgb(230, 230, 230));
-                        SecondaryList.Children.Add(btn);
+                        btn.Background = new SolidColorBrush(Color.FromRgb(61, 61, 61));
+                        btn.Foreground = new SolidColorBrush(Color.FromRgb(230, 230, 230));
+                        Dispatcher.Invoke(() => SecondaryList.Children.Add(btn));
                     }
                 }
-                /*
-                if (GinsorIDList.Contains(GinsorId))
-                {
-                    bIsSearched = true;
-                    ToggleButton btn = new ToggleButton();
-
-                    btn.IsEnabled = true;
-                    btn.Focusable = true;
-                    btn.Click += GinsButton_Click;
-                    btn.Content = new TextBlock
-                    {
-                        Text = GinsorId + "\nIn Package " + dictlist[GinsorId].reference.package_id.ToString("X2") + "\nIn SegmentIDs: ",
-                        TextWrapping = TextWrapping.Wrap,
-                        FontSize = 13
-                    };
-                    foreach (uint segment_id in dictlist[GinsorId].SegmentIDs)
-                    {
-                        (btn.Content as TextBlock).Text += segment_id.ToString("X8") + " ";
-                    }
-
-                    SecondaryList.Children.Add(btn);
-                }
-                */
             }
         }
 
@@ -688,7 +489,6 @@ namespace DestinyMusicViewer
             Configuration config = ConfigurationManager.OpenExeConfiguration(System.Windows.Forms.Application.ExecutablePath);
             if (mainWindow.OutputPath == string.Empty)
             {
-                //config.Save(ConfigurationSaveMode.Minimal);
                 if (config.AppSettings.Settings["OutputPath"] != null)
                 {
                     mainWindow.OutputPath = config.AppSettings.Settings["OutputPath"].Value;
@@ -715,9 +515,9 @@ namespace DestinyMusicViewer
             {
                 gins_id = SegmentSearchBox.Text.ToUpper();
             }
-            else if (PrimaryList.Children[SelectedWemIndex] != null)
+            else if (PrimaryList.Items[SelectedWemIndex] != null)
             {
-                gins_id = ((PrimaryList.Children[SelectedWemIndex] as ToggleButton).Content as TextBlock).Text.Split("\n")[0];
+                gins_id = ((PrimaryList.Items[SelectedWemIndex] as ToggleButton).Content as TextBlock).Text.Split("\n")[0];
             }
             else if (SecondaryList.Children.Contains(sender as ToggleButton))
             {
@@ -729,7 +529,6 @@ namespace DestinyMusicViewer
             }
             else
             {
-                //gins_id = ((PrimaryList.Children[SelectedWemIndex] as ToggleButton).Content as TextBlock).Text.Split("\n")[0];
                 gins_id = GinsorIDList[0];
                 Dispatcher.Invoke(() => log("No valid GinsorID selected, using first GinsorID."));
             }
@@ -769,7 +568,7 @@ namespace DestinyMusicViewer
             Dispatcher.Invoke(() => log($"Exported to {output_path}.{config.AppSettings.Settings["AudioFormat"].Value.ToLower()}"));
             if (((sender as ToggleButton).Content as TextBlock).Text.Contains("Selected"))
             {
-                (sender as ToggleButton).IsChecked = false;
+                Dispatcher.Invoke(() => (sender as ToggleButton).IsChecked = false);
             }
         }
 
@@ -849,7 +648,7 @@ namespace DestinyMusicViewer
                 Dispatcher.Invoke(() => log($"Error: {ex.Message}"));
                 MessageBox.Show("Error: " + ex.Message);
             }
-            (sender as ToggleButton).IsChecked = false;
+            Dispatcher.Invoke(() => (sender as ToggleButton).IsChecked = false);
         }
 
         private void ExportAllInList_Click(object sender, RoutedEventArgs e)
@@ -924,7 +723,7 @@ namespace DestinyMusicViewer
                 VorbisReaders.Add(vorb);
             }
             double duration = VorbisReaders[0].Length / VorbisReaders[0].WaveFormat.AverageBytesPerSecond;
-            TrackInfoTextBlock.Text = "Track Info:\n    Length: " + duration.ToString("0.00") + "s";// + "\n" + vorbis.TrackCount.ToString();
+            TrackInfoTextBlock.Text = "Track Info:\n    Length: " + duration.ToString("0.00") + "s";
             var mixer = new MixingSampleProvider(VorbisReaders.ToArray());
             try
             {
@@ -950,12 +749,123 @@ namespace DestinyMusicViewer
             Dispatcher.Invoke(() => (sender as ToggleButton).IsChecked = false);
         }
 
-        private void PlaybackProgressBar_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        private void RegenerateListButton_Clicked(object sender, RoutedEventArgs e)
         {
-            //Get current time in seconds from the NAudio waveOut stream.
-            //double pos = waveOut.GetPosition();
-            //PlaybackProgressBar.Value = (pos / music_len_sec) / 1000;
-            //log($"{(pos / music_len_sec) / 1000}");
+            MessageBox.Show("This may take a while!");
+            GinsorIDList.Clear();
+            dictlist.Clear();
+            Dictionary<string, List<uint>> id_to_segment = new Dictionary<string, List<uint>>();
+            foreach (Package package in extractor.master_packages_stream())
+            {
+                if (!package.no_patch_id_name.Contains("audio"))
+                {
+                    continue;
+                }
+                for (int entry_index = 0; entry_index < package.entry_table().Count; entry_index++)
+                {
+                    Entry entry = package.entry_table()[entry_index];
+                    if (entry.type == 26 && entry.subtype == 6)
+                    {
+                        byte[] bnkData = extractor.extract_entry_data(package, entry).data;
+                        foreach (string gins in genList(bnkData, ref id_to_segment))
+                        {
+                            GinsorIDList.Add(gins);
+                        }
+                    }
+                }
+            }
+
+            var uniq = GinsorIDList.Distinct().ToList();
+            foreach (string gins in uniq.ToArray())
+            {
+                List<uint> SegmentIds = id_to_segment[gins].Distinct().ToList();
+                uint idx = 0;
+                Package pkg = extractor.find_pkg_of_ginsid(gins, ref idx);
+                GinsorIdEntry ginsid_entry = new GinsorIdEntry();
+                ginsid_entry.reference = Utils.generate_reference_hash(pkg.package_id, idx);
+                ginsid_entry.SegmentIDs = SegmentIds;
+                dictlist[gins] = ginsid_entry;
+            }
+
+            var json = JsonConvert.SerializeObject(dictlist, Formatting.Indented);
+            File.WriteAllText("GinsorID_ref_dict.json", json);
+            File.WriteAllLines("OSTs.db", uniq);
+            LoadList();
+            MessageBox.Show("Done regenerating music list.");
         }
+
+        public List<string> genList(byte[] soundBankData, ref Dictionary<string, List<uint>> id_to_segment)
+        {
+            List<string> GinsorIDs = new List<string>();
+            SoundBank memSoundBank = new InMemorySoundBank(soundBankData);
+            var bkhd = memSoundBank.ParseChunk(SoundBankChunkType.BKHD);
+            if (bkhd == null)
+            {
+                throw new Exception("The specified file does not have a valid SoundBank header.");
+            }
+            var hirc = memSoundBank.GetChunk(SoundBankChunkType.HIRC);
+            if (hirc == null)
+            {
+                throw new Exception("The specified file does not have a valid Hierarchy header.");
+            }
+
+            var musicObjs = (hirc as SoundBankHierarchyChunk).Objects
+                .Where(o => o is MusicObject)
+                .Select(o => o as MusicObject);
+
+            foreach (var obj in musicObjs)
+            {
+                if (obj.Type == HIRCObjectType.MusicSegment)
+                {
+                    var segment = obj as MusicSegment;
+                    for (int i = 0; i < segment.ChildCount; i++)
+                    {
+                        foreach (var srch_obj in musicObjs)
+                        {
+                            if (srch_obj.Id == segment.ChildIds[i])
+                            {
+                                var track = srch_obj as MusicTrack;
+                                for (int x = 0; x < track.SoundCount; x++)
+                                {
+                                    var sound = track.Sounds[x];
+                                    var ginsid = ((uint)IPAddress.NetworkToHostOrder((int)sound.AudioId)).ToHex().ToUpper();
+                                    Debug.WriteLine($"GinsorID of track {track.Id} (Parent Segment: {segment.Id}): {ginsid}");
+                                    if (!id_to_segment.ContainsKey(ginsid) || id_to_segment[ginsid] == null)
+                                    {
+                                        id_to_segment[ginsid] = new List<uint>();
+                                    }
+                                    id_to_segment[ginsid].Add(segment.Id);
+                                    GinsorIDs.Add(ginsid);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            return GinsorIDs;
+        }
+        /*
+        private void ScrollView_ScrollChanged(object sender, ScrollChangedEventArgs e)
+        {
+            var scrollViewer = (ScrollViewer)sender;
+            if (scrollViewer.VerticalOffset == scrollViewer.ScrollableHeight)
+                LoadMore();
+        }
+
+        public void LoadMore()
+        {
+            Dispatcher.Invoke(() => ScrollView.);
+            for (var i = PrimaryList.Children.Count; i < PrimaryList.Children.Count + 1024; i++)
+            {
+                if (i >= pub_ToggleList.Count())
+                    return;
+                
+                ToggleButton btn = pub_ToggleList[i];
+                //Debug.WriteLine(btn.Dispatcher.CheckAccess());
+                Dispatcher.Invoke(() => PrimaryList.Children.Add(btn));
+            }
+            Dispatcher.Invoke(() => ScrollView.IsEnabled = true);
+        }
+        */
     }
 }

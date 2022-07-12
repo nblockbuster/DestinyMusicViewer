@@ -2,6 +2,8 @@
 using System.Configuration;
 using System.ComponentModel;
 using System.Windows.Controls;
+using System.Threading;
+using System;
 
 namespace DestinyMusicViewer
 {
@@ -21,7 +23,10 @@ namespace DestinyMusicViewer
 
     public partial class MainWindow : Window
     {
-        
+        private void OnWindowclose(object sender, EventArgs e)
+        {
+            Environment.Exit(Environment.ExitCode);
+        }
 
         public Configuration config = ConfigurationManager.OpenExeConfiguration(System.Windows.Forms.Application.ExecutablePath);
         public string PkgCacheName;
@@ -67,12 +72,10 @@ namespace DestinyMusicViewer
 
         private void ChangeAudioType(object sender, RoutedEventArgs e)
         {
-            AudioFormat AudioFormat;
-            AudioFormat = AudioFormat.Wem;
+            AudioFormat AudioFormat = AudioFormat.Wem;
             if (config.AppSettings.Settings["AudioFormat"] == null)
             {
                 return;
-                //config.AppSettings.Settings.Add("AudioFormat", AudioFormat.ToString());
             }
 
             RadioButton rb = sender as RadioButton;

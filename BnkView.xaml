@@ -21,11 +21,17 @@
             <!--<RowDefinition Height="8*"/>-->
         </Grid.RowDefinitions>
 
-        <ScrollViewer Background="#3d3d3d" Name="ScrollView" Focusable="False" Margin="0,0,0,5" >
+        <ListBox ScrollViewer.HorizontalScrollBarVisibility="Disabled" Background="#3d3d3d" Focusable="False" BorderBrush="#FF3D3D3D" x:Name="PrimaryList" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
+            <ToggleButton x:Name="SelectPkgsDirectoryButton" Style="{StaticResource ButtonStyle}" Content="Select Packages Directory" VerticalAlignment="Center" HorizontalAlignment="Center" Click="SelectPkgsDirectoryButton_Click" Margin="90,320,0,0" Height="30" Width="150"/>
+        </ListBox>
+        
+        <!--
+        <ScrollViewer Background="#3d3d3d" Name="ScrollView" Focusable="False" Margin="0,0,0,5" ScrollChanged="ScrollView_ScrollChanged" >
             <StackPanel x:Name="PrimaryList" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Focusable="false">
                 <ToggleButton x:Name="SelectPkgsDirectoryButton" Style="{StaticResource ButtonStyle}" Content="Select Packages Directory" VerticalAlignment="Center" HorizontalAlignment="Center" Click="SelectPkgsDirectoryButton_Click" Margin="0,320,0,0" Height="30" Width="150"/>
             </StackPanel>
         </ScrollViewer>
+        -->
         <!--
         <ToggleButton Grid.Column="0" x:Name="DisplayButton" Style="{StaticResource Button_Command}" IsEnabled="False" Focusable="False" Background="#FF636363" BorderBrush="#FF636363" Foreground="#FFDDDDDD" Margin="15,151,15,26" RenderTransformOrigin="0,1" Grid.Row="2" />
         -->
@@ -126,6 +132,7 @@
             <Slider x:Name="VolSlider" Minimum="0" Maximum="1" ValueChanged="VolSliderUpdated"  HorizontalAlignment="Center" Margin="0,196,0,0" VerticalAlignment="Top" Width="316" Foreground="#FFDDDDDD" Height="18" TickPlacement="None" Cursor="Hand" TickFrequency="20"/>
             <TextBlock HorizontalAlignment="Center" Margin="0,170,0,0" TextWrapping="Wrap" Text="Volume" VerticalAlignment="Top" Foreground="#FFDDDDDD" FontSize="16" RenderTransformOrigin="0.017,0.909" Height="21" Width="56"/>
             <ToggleButton x:Name="ExportSelectedButton" Style="{StaticResource Button_Command2}" Content="Export Selected" VerticalAlignment="Top" HorizontalAlignment="Left" Click="Export_Clicked" Height="45" Width="160" FontSize="16" Margin="176,65,0,0" Background="#FF3D3D3D" Foreground="#FFDDDDDD"/>
+            <ToggleButton x:Name="RegenerateListButton" Style="{StaticResource Button_Command2}" Content="Regenerate Music List" VerticalAlignment="Top" HorizontalAlignment="Left" Click="RegenerateListButton_Clicked" Height="45" Width="160" FontSize="16" Margin="176,10,0,0" Background="#FF3D3D3D" Foreground="#FFDDDDDD" Visibility="Hidden"/>
             <ToggleButton x:Name="ExportAllClickedAudio" Style="{StaticResource Button_Command2}" Content="Auto Export" VerticalAlignment="Top" HorizontalAlignment="Left" Click="ExportWhenClickedOn_Clicked" Height="45" Width="160" FontSize="16" Background="#FF3D3D3D" Foreground="#FFDDDDDD" Margin="176,120,0,0"/>
             <!--
             <Button x:Name="ClearSearchButton" Content="Button" HorizontalAlignment="Left" Margin="246,10,0,0" VerticalAlignment="Top" Height="45" Width="90" Click="ClearSearchButton_Click" Opacity="0"/>
@@ -137,8 +144,9 @@
             <TextBox x:Name="SegmentSearchBox" HorizontalAlignment="Left" Margin="246,65,0,0" TextWrapping="Wrap" Text="Search for Segment ID" VerticalAlignment="Top" Width="90" Height="45" TextAlignment="Center" Background="{x:Null}" Foreground="#FFDDDDDD" KeyDown="SegmentSearchBox_KeyDown" BorderBrush="White" MouseDown="SegmentSearchBox_MouseDown"/>
             <Button x:Name="ClearSegmentSearchButton" Content="Button" HorizontalAlignment="Left" Margin="246,10,0,0" VerticalAlignment="Top" Height="45" Width="90" Click="ClearSegmentSearchButton_Click" Opacity="0"/>
             -->
-            <ToggleButton x:Name="ExportScriptButton" Style="{StaticResource Button_Command2}" Content="Export Script" VerticalAlignment="Top" HorizontalAlignment="Left" Click="ExportScript_Click" Height="45" Width="160" FontSize="16" Margin="176,10,0,0" Background="#FF3D3D3D" Foreground="#FFDDDDDD"/>
+            <ToggleButton x:Name="ExportScriptButton" Style="{StaticResource Button_Command2}" Content="Export Script" VerticalAlignment="Top" HorizontalAlignment="Left" Click="ExportScript_Click" Height="45" Width="160" FontSize="16" Margin="176,10,0,0" Background="#FF3D3D3D" Foreground="#FFDDDDDD" Visibility="Hidden"/>
             <ToggleButton x:Name="ExportAllButton" Style="{StaticResource Button_Command2}" Content="Export All" VerticalAlignment="Top" HorizontalAlignment="Left" Height="45" Width="160" FontSize="16" Margin="10,120,0,0" Background="#FF3D3D3D" Foreground="#FFDDDDDD" Click="ExportAllButton_Click"/>
+
             <!--
             <ToggleButton x:Name="UnkButton3" Style="{StaticResource Button_Command2}" Content="UnkButton3" VerticalAlignment="Top" HorizontalAlignment="Left" Height="44" Width="100" FontSize="16" Margin="238,118,0,0" Background="#FF3D3D3D" Foreground="#FFDDDDDD"/>
             -->
