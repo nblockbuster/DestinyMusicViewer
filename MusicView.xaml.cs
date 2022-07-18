@@ -86,11 +86,15 @@ namespace DestinyMusicViewer
                     extractor = new Extractor(packages_path, LoggerLevels.HighVerbouse);
                 }
 
-                Dispatcher.Invoke(() => log("Loading..."));
-                LoadList();
-                Dispatcher.Invoke(() => PrimaryList.Items.Clear());
-                ShowList();
-                Dispatcher.Invoke(() => log("All loaded."));
+                if (PrimaryList.ItemsSource == null)
+                {
+                    Dispatcher.Invoke(() => PrimaryList.Items.Clear());
+                    Dispatcher.Invoke(() => PrimaryList.ItemsSource = null);
+                    Dispatcher.Invoke(() => log("Loading..."));
+                    LoadList();
+                    ShowList();
+                    Dispatcher.Invoke(() => log("All loaded."));
+                }
             }
             else
             {
@@ -100,7 +104,8 @@ namespace DestinyMusicViewer
 
         private void LoadList()
         {
-
+            if (PrimaryList.ItemsSource != null)
+                return;
             List<uint> PackageIDs = new List<uint>();
             if (File.Exists("GinsorID_ref_dict.json"))
             {
@@ -124,6 +129,7 @@ namespace DestinyMusicViewer
 
         public void ShowList()
         {
+            List<ToggleButton> buttons = new List<ToggleButton>();
             foreach (string GinsorId in GinsorIDList)
             {
                 ToggleButton btn = new ToggleButton();
@@ -147,8 +153,9 @@ namespace DestinyMusicViewer
                 {
                     (btn.Content as TextBlock).Text += segment_id.ToString("X8") + " ";
                 }
-                Dispatcher.Invoke(() => PrimaryList.Items.Add(btn));
+                buttons.Add(btn);
             }
+            Dispatcher.Invoke(() => PrimaryList.ItemsSource = buttons);
         }
 
         private void GinsButton_Click(object sender, RoutedEventArgs e)
