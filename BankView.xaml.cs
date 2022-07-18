@@ -63,7 +63,15 @@ namespace DestinyMusicViewer
                 SelectPkgsDirectoryButton.Visibility = Visibility.Hidden;
                 Configuration config = ConfigurationManager.OpenExeConfiguration(System.Windows.Forms.Application.ExecutablePath);
                 packages_path = config.AppSettings.Settings["PackagesPath"].Value;
-                extractor = new Extractor(packages_path, LoggerLevels.HighVerbouse);
+                if(mainWindow._extractor != null)
+                {
+                    extractor = mainWindow._extractor;
+                }
+                else
+                {
+                    extractor = new Extractor(packages_path, LoggerLevels.HighVerbouse);
+                }
+                //extractor = new Extractor(packages_path, LoggerLevels.HighVerbouse);
                 LoadList();
                 Dispatcher.Invoke(() => PrimaryList.Items.Clear());
                 ShowList();
@@ -125,7 +133,7 @@ namespace DestinyMusicViewer
         {
             foreach (Package package in extractor.master_packages_stream())
             {
-                if (CheckForBnks(package))
+                if (CheckForBnks(package) && !package.no_patch_id_name.Contains("_en"))
                 {
                     packages.Add(package.no_patch_id_name, package);
                 }

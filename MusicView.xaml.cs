@@ -37,7 +37,6 @@ namespace DestinyMusicViewer
         public Dictionary<string, GinsorIdEntry> dictlist = new Dictionary<string, GinsorIdEntry>();
         public List<string> GinsorIDList = new List<string>();
         private MainWindow mainWindow = null;
-        private ScriptVew scriptView = null;
         private static WaveOut waveOut = new WaveOut();
         string CurrentGinsorId;
         int SelectedWemIndex = 0;
@@ -76,7 +75,15 @@ namespace DestinyMusicViewer
                 SelectPkgsDirectoryButton.Visibility = Visibility.Hidden;
                 Configuration config = ConfigurationManager.OpenExeConfiguration(System.Windows.Forms.Application.ExecutablePath);
                 packages_path = config.AppSettings.Settings["PackagesPath"].Value;
-                extractor = new Extractor(packages_path, LoggerLevels.HighVerbouse);
+                //extractor = new Extractor(packages_path, LoggerLevels.HighVerbouse);
+                if (mainWindow._extractor != null)
+                {
+                    extractor = mainWindow._extractor;
+                }
+                else
+                {
+                    extractor = new Extractor(packages_path, LoggerLevels.HighVerbouse);
+                }
                 Dispatcher.Invoke(() => log("Loading..."));
                 LoadList();
                 Dispatcher.Invoke(() => PrimaryList.Items.Clear());
@@ -166,8 +173,7 @@ namespace DestinyMusicViewer
                 Dispatcher.Invoke(() => (sender as ToggleButton).IsChecked = false);
                 bIsSearched = false;
             }
-
-            scriptView.viewScript();
+            //scriptView.viewScript();
 
         }
 
@@ -249,7 +255,7 @@ namespace DestinyMusicViewer
         {
             vorbis = new VorbisWaveReader(new MemoryStream(OggData));
             double duration = vorbis.Length / vorbis.WaveFormat.AverageBytesPerSecond;
-            Dispatcher.Invoke(() => ScriptView.TrackInfoTextBlock.Text = "Track Info:\n    Length: " + duration.ToString("0.00") + "s");
+            Dispatcher.Invoke(() => ScriptViewItem.TrackInfoTextBlock.Text = "Track Info:\n    Length: " + duration.ToString("0.00") + "s");
             try
             {
                 waveOut.Dispose();
@@ -674,7 +680,7 @@ namespace DestinyMusicViewer
                 VorbisReaders.Add(vorb);
             }
             double duration = VorbisReaders[0].Length / VorbisReaders[0].WaveFormat.AverageBytesPerSecond;
-            Dispatcher.Invoke(() => ScriptView.TrackInfoTextBlock.Text = "Track Info:\n    Length: " + duration.ToString("0.00") + "s");
+            Dispatcher.Invoke(() => ScriptViewItem.TrackInfoTextBlock.Text = "Track Info:\n    Length: " + duration.ToString("0.00") + "s");
             try
             {
                 var mixer = new MixingSampleProvider(VorbisReaders.ToArray());

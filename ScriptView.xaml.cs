@@ -16,11 +16,11 @@ using System.Windows.Shapes;
 namespace DestinyMusicViewer
 {
     /// <summary>
-    /// Interaction logic for ScriptVew.xaml
+    /// Interaction logic for ScriptView.xaml
     /// </summary>
-    public partial class ScriptVew : UserControl
+    public partial class ScriptView : UserControl
     {
-        public ScriptVew()
+        public ScriptView()
         {
             InitializeComponent();
         }

@@ -34,7 +34,9 @@ namespace DestinyMusicViewer
         public string OutputPath = string.Empty;
         private static TabItem _newestTab = null;
         public DestMusViewer _dmv = new DestMusViewer();
-        
+        public Tiger.Extractor _extractor = null;
+
+
         public MainWindow()
         {
             InitializeComponent();
@@ -43,8 +45,10 @@ namespace DestinyMusicViewer
 
         private void InitialiseConfig()
         {
-            PkgPathKey = "PackagesPathBL";
-
+            if (config.AppSettings.Settings["PackagesPath"] != null)
+            {
+                _extractor = new Tiger.Extractor(config.AppSettings.Settings["PackagesPath"].Value, Tiger.LoggerLevels.HighVerbouse);
+            }
             if (config.AppSettings.Settings["AudioFormat"] != null)
             {
                 if (config.AppSettings.Settings["AudioFormat"].Value == AudioFormat.Wem.ToString())

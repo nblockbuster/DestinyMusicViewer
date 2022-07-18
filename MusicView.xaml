@@ -41,7 +41,7 @@
             <ToggleButton x:Name="ExportScriptButton" Style="{StaticResource Button_Command2}" Content="Export Script" VerticalAlignment="Top" HorizontalAlignment="Left" Click="ExportScript_Click" Height="45" Width="160" FontSize="16" Margin="176,10,0,0" Background="#FF3D3D3D" Foreground="#FFDDDDDD" Visibility="Hidden"/>
             <ToggleButton x:Name="ExportAllButton" Style="{StaticResource Button_Command2}" Content="Export All" VerticalAlignment="Top" HorizontalAlignment="Left" Height="45" Width="160" FontSize="16" Margin="10,120,0,0" Background="#FF3D3D3D" Foreground="#FFDDDDDD" Click="ExportAllButton_Click"/>
         </Grid>
-        <local:ScriptVew x:Name="ScriptView" Grid.Column="1"/>
+        <local:ScriptView x:Name="ScriptViewItem" Grid.Column="1"/>
         <ToggleButton x:Name="ExportAllInSecondaryList" Style="{StaticResource Button_Command2}" Content="Export All In List" VerticalAlignment="Top" HorizontalAlignment="Left" Click="ExportAllInList_Click" Height="45" Width="160" FontSize="16" Margin="10,10,0,0" Background="#FF3D3D3D" Foreground="#FFDDDDDD" Grid.Column="2" Grid.Row="2"/>
 
         <Slider x:Name="PlaybackProgressBar" HorizontalAlignment="Left" Margin="67,59,0,0" Grid.Row="1" VerticalAlignment="Top" Width="240" IsEnabled="False" Height="18"/>
