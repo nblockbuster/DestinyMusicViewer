@@ -9,10 +9,10 @@
              d:DesignHeight="1080" d:DesignWidth="1920" FontSize="16">
     <Grid Background="#FF393939">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="3*"/>
-            <ColumnDefinition Width="3*"/>
-            <ColumnDefinition Width="3*"/>
-            <ColumnDefinition Width="7*"/>
+            <ColumnDefinition Width="18*"/>
+            <ColumnDefinition Width="19*"/>
+            <ColumnDefinition Width="19*"/>
+            <ColumnDefinition Width="40*"/>
         </Grid.ColumnDefinitions>
         <ListBox ScrollViewer.HorizontalScrollBarVisibility="Disabled" Background="#FF393939" Focusable="False" BorderBrush="#FF393939" x:Name="PrimaryList">
             <ToggleButton x:Name="SelectPkgsDirectoryButton" Style="{StaticResource ButtonStyle}" Content="Select Packages Directory" Click="SelectPkgsDirectoryButton_Click" Margin="80,480,0,0" Height="30" Width="200"/>

@@ -71,10 +71,14 @@ namespace DestinyMusicViewer
                 {
                     extractor = new Extractor(packages_path, LoggerLevels.HighVerbouse);
                 }
-                //extractor = new Extractor(packages_path, LoggerLevels.HighVerbouse);
+                mainWindow.ProgressView.SetProgressStages(new List<string>
+                {
+                    "loading package list"
+                });
                 LoadList();
-                Dispatcher.Invoke(() => PrimaryList.Items.Clear());
+                Dispatcher.Invoke(() => PrimaryList.ItemsSource = null);
                 ShowList();
+                mainWindow.ProgressView.CompleteStage();
             }
             else
             {
@@ -131,9 +135,11 @@ namespace DestinyMusicViewer
 
         private void LoadList()
         {
-            foreach (Package package in extractor.master_packages_stream())
+            string[] InvalidPackages = { "_en", "_sandbox_", "_dialog_", "_effect_" };
+
+            foreach (var package in extractor.master_packages_stream())
             {
-                if (CheckForBnks(package) && !package.no_patch_id_name.Contains("_en"))
+                if (CheckForBnks(package) != 0 && !InvalidPackages.Any(package.no_patch_id_name.Contains))
                 {
                     packages.Add(package.no_patch_id_name, package);
                 }
@@ -142,59 +148,70 @@ namespace DestinyMusicViewer
 
         private void ShowList()
         {
+            Dispatcher.Invoke(() => PrimaryList.ItemsSource = null);
             Dispatcher.Invoke(() => PrimaryList.Items.Clear());
-            List<ToggleButton> ButtonList = new List<ToggleButton>();
-            foreach (KeyValuePair<string, Package> package in packages)
+            List<ToggleButton> ToggleButtons = new List<ToggleButton>();
+            foreach (var package in packages)
             {
-                ToggleButton btn = new ToggleButton();
-
-                btn.Content = new TextBlock { Text = package.Key, TextWrapping = TextWrapping.Wrap, FontSize = 13 };
+                var btn = new ToggleButton();
+                btn.Content = new TextBlock
+                {
+                    Text = package.Key,
+                    TextWrapping = TextWrapping.Wrap,
+                    FontSize = 13
+                };
                 btn.Style = Application.Current.Resources["Button_Command"] as Style;
                 btn.HorizontalAlignment = HorizontalAlignment.Stretch;
-                btn.VerticalAlignment = VerticalAlignment.Center;
+                btn.VerticalAlignment = VerticalAlignment.Stretch;
                 btn.Background = new SolidColorBrush(Color.FromRgb(61, 61, 61));
                 btn.Foreground = new SolidColorBrush(Color.FromRgb(230, 230, 230));
                 btn.Height = 75;
                 btn.Width = 325;
                 btn.Focusable = true;
                 btn.Click += PackageButtonOnClick;
-
-                ButtonList.Add(btn);
+                ToggleButtons.Add(btn);
             }
-            Dispatcher.Invoke(() => PrimaryList.ItemsSource = ButtonList);
+            Dispatcher.Invoke(() => PrimaryList.ItemsSource = ToggleButtons);
         }
+
 
         private void PackageButtonOnClick(object sender, RoutedEventArgs e)
         {
+            mainWindow.ProgressView.SetProgressStages(new List<string>
+            {
+                "loading playlists"
+            });
             string ClickedPackageName = ((sender as ToggleButton).Content as TextBlock).Text;
             Package pkg = packages[ClickedPackageName];
             CurrentPkg = pkg;
             ShowBnkList(pkg);
             Dispatcher.Invoke(() => (sender as ToggleButton).IsChecked = false);
+            mainWindow.ProgressView.CompleteStage();
         }
 
-        private bool CheckForBnks(Package package)
+        private int CheckForBnks(Package package)
         {
+            int AmountOfBnks = 0;
             foreach (Entry entry in package.entry_table())
             {
                 if (entry.type == 26 && entry.subtype == 6)
                 {
-                    return true;
+                    AmountOfBnks += 1;
                 }
             }
-            return false;
+            return AmountOfBnks;
         }
 
         private List<Entry> GetAllBnks(Package package)
         {
             List<Entry> BnkEntries = new List<Entry>();
-            foreach (Entry entry in package.entry_table())
+            Parallel.ForEach(package.entry_table(), entry =>
             {
                 if (entry.type == 26 && entry.subtype == 6)
                 {
                     BnkEntries.Add(entry);
                 }
-            }
+            });
             return BnkEntries;
         }
 
@@ -218,7 +235,7 @@ namespace DestinyMusicViewer
 
             Dispatcher.Invoke(() => PrimaryList.Items.Add(btn));
 
-            foreach (Entry BnkEntry in GetAllBnks(pkg))
+            foreach (var BnkEntry in GetAllBnks(pkg))
             {
                 if (GetGinsorIds(BnkEntry).Distinct().Count() == 0)
                     continue;

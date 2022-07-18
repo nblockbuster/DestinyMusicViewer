@@ -4,6 +4,8 @@ using System.ComponentModel;
 using System.Windows.Controls;
 using System.Threading;
 using System;
+using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace DestinyMusicViewer
 {
@@ -35,19 +37,38 @@ namespace DestinyMusicViewer
         private static TabItem _newestTab = null;
         public DestMusViewer _dmv = new DestMusViewer();
         public Tiger.Extractor _extractor = null;
+        public static ProgressView Progress = null;
 
 
         public MainWindow()
         {
             InitializeComponent();
-            InitialiseConfig();
+            
         }
 
-        private void InitialiseConfig()
+        public void OnControlLoaded(object sender, RoutedEventArgs e)
+        {
+            Progress = ProgressView;
+            if (MainMenuTab.Visibility == Visibility.Visible)
+            {
+                InitialiseConfig();
+            }
+        }
+
+        private async void InitialiseConfig()
         {
             if (config.AppSettings.Settings["PackagesPath"] != null)
             {
-                _extractor = new Tiger.Extractor(config.AppSettings.Settings["PackagesPath"].Value, Tiger.LoggerLevels.HighVerbouse);
+                Progress.SetProgressStages(new List<string>
+                {
+                    "extractor initialization"
+                });
+                await Task.Run(() =>
+                {
+                    _extractor = new Tiger.Extractor(config.AppSettings.Settings["PackagesPath"].Value, Tiger.LoggerLevels.HighVerbouse);
+                });
+                Progress.CompleteStage();
+                
             }
             if (config.AppSettings.Settings["AudioFormat"] != null)
             {

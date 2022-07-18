@@ -84,6 +84,7 @@ namespace DestinyMusicViewer
                 {
                     extractor = new Extractor(packages_path, LoggerLevels.HighVerbouse);
                 }
+
                 Dispatcher.Invoke(() => log("Loading..."));
                 LoadList();
                 Dispatcher.Invoke(() => PrimaryList.Items.Clear());

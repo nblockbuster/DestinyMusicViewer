@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:DestinyMusicViewer"
         mc:Ignorable="d"
+        Loaded="OnControlLoaded"
         Title="Destiny Music Viewer" Height="1080" Width="1920" Background="White">
     <Grid>
         <Grid.ColumnDefinitions>
@@ -40,5 +41,6 @@
                 <local:MainMenuView/>
             </TabItem>
         </TabControl>
+        <local:ProgressView x:Name="ProgressView" Grid.Row="0" Grid.RowSpan="2" Height="1080" Width="1920"/>
     </Grid>
 </Window>

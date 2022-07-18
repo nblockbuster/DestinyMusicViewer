@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Net;
+using System.Threading.Tasks;
 using WwiseParserLib;
 using WwiseParserLib.Structures.Chunks;
 using WwiseParserLib.Structures.Objects.HIRC;
@@ -16,6 +17,8 @@ namespace DestinyMusicViewer
         public SoundBank MemorySoundbank { get; set; }
         public List<string> genList(byte[] soundBankData, ref Dictionary<string, List<uint>> id_to_segment)
         {
+            Dictionary<string, List<uint>> id_segment = new Dictionary<string, List<uint>>();
+            id_segment = id_to_segment;
             List<string> GinsorIDs = new List<string>();
             SoundBank memSoundBank = new InMemorySoundBank(soundBankData);
             var bkhd = memSoundBank.ParseChunk(SoundBankChunkType.BKHD);
@@ -31,7 +34,7 @@ namespace DestinyMusicViewer
 
             var musicObjs = (hirc as SoundBankHierarchyChunk).Objects.Where(o => o is MusicObject).Select(o => o as MusicObject);
 
-            foreach (var obj in musicObjs)
+            Parallel.ForEach(musicObjs, obj =>
             {
                 if (obj.Type == HIRCObjectType.MusicSegment)
                 {
@@ -48,18 +51,18 @@ namespace DestinyMusicViewer
                                     var sound = track.Sounds[x];
                                     var ginsid = ((uint)IPAddress.NetworkToHostOrder((int)sound.AudioId)).ToHex().ToUpper();
                                     Debug.WriteLine($"GinsorID of track {track.Id} (Parent Segment: {segment.Id}): {ginsid}");
-                                    if (!id_to_segment.ContainsKey(ginsid) || id_to_segment[ginsid] == null)
+                                    if (!id_segment.ContainsKey(ginsid) || id_segment[ginsid] == null)
                                     {
-                                        id_to_segment[ginsid] = new List<uint>();
+                                        id_segment[ginsid] = new List<uint>();
                                     }
-                                    id_to_segment[ginsid].Add(segment.Id);
+                                    id_segment[ginsid].Add(segment.Id);
                                     GinsorIDs.Add(ginsid);
                                 }
                             }
                         }
                     }
                 }
-            }
+            });
             return GinsorIDs;
         }
 
