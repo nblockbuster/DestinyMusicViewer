@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -15,9 +16,9 @@ namespace DestinyMusicViewer
     public class DestMusViewer
     {
         public SoundBank MemorySoundbank { get; set; }
-        public List<string> genList(byte[] soundBankData, ref Dictionary<string, List<uint>> id_to_segment)
+        public List<string> genList(byte[] soundBankData, ref ConcurrentDictionary<string, List<uint>> id_to_segment)
         {
-            Dictionary<string, List<uint>> id_segment = new Dictionary<string, List<uint>>();
+            ConcurrentDictionary<string, List<uint>> id_segment = new ConcurrentDictionary<string, List<uint>>();
             id_segment = id_to_segment;
             List<string> GinsorIDs = new List<string>();
             SoundBank memSoundBank = new InMemorySoundBank(soundBankData);

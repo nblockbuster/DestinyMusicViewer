@@ -263,11 +263,9 @@ namespace DestinyMusicViewer
 
         private List<string> GetGinsorIds(Entry BnkEntry)
         {
-            List<string> GinsorIds = new List<string>();
-
             byte[] BnkData = extractor.extract_entry_data(CurrentPkg, BnkEntry).data;
-            Dictionary<string, List<uint>> IdToSegment = new Dictionary<string, List<uint>>();
-            GinsorIds = mainWindow._dmv.genList(BnkData, ref IdToSegment);
+            ConcurrentDictionary<string, List<uint>> IdToSegment = new ConcurrentDictionary<string, List<uint>>();
+            List<string> GinsorIds = mainWindow._dmv.genList(BnkData, ref IdToSegment);
             return GinsorIds;
         }
 

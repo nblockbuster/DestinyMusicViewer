@@ -17,6 +17,7 @@ using Tiger;
 using Tiger.Formats;
 using WwiseParserLib;
 using Newtonsoft.Json;
+using System.Collections.Concurrent;
 
 namespace DestinyMusicViewer
 {
@@ -712,7 +713,7 @@ namespace DestinyMusicViewer
             MessageBox.Show("This may take a while!");
             GinsorIDList.Clear();
             dictlist.Clear();
-            Dictionary<string, List<uint>> id_to_segment = new Dictionary<string, List<uint>>();
+            ConcurrentDictionary<string, List<uint>> id_to_segment = new ConcurrentDictionary<string, List<uint>>();
             foreach (Package package in extractor.master_packages_stream())
             {
                 if (!package.no_patch_id_name.Contains("audio"))
