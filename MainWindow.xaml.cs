@@ -2,10 +2,10 @@
 using System.Configuration;
 using System.ComponentModel;
 using System.Windows.Controls;
-using System.Threading;
 using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using VersionChecker;
 
 namespace DestinyMusicViewer
 {
@@ -43,7 +43,36 @@ namespace DestinyMusicViewer
         public MainWindow()
         {
             InitializeComponent();
-            
+
+            CheckVersion();
+
+        }
+
+        private async void CheckVersion()
+        {
+            var currentVersion = new ApplicationVersion("1.2.1");
+            var versionChecker = new ApplicationVersionChecker("https://github.com/nblockbuster/DestinyMusicViewer/raw/main/", currentVersion);
+            versionChecker.LatestVersionName = "version";
+            try
+            {
+                var upToDate = await versionChecker.IsUpToDate();
+                if (!upToDate)
+                {
+                    MessageBox.Show($"New version available on GitHub! (local {versionChecker.CurrentVersion.Id} vs ext {versionChecker.LatestVersion.Id})");
+                    Tiger.Logger.log($"Version is not up-to-date (local {versionChecker.CurrentVersion.Id} vs ext {versionChecker.LatestVersion.Id}).", Tiger.LoggerLevels.HighVerbouse);
+                }
+                else
+                {
+                    Tiger.Logger.log($"Version is up to date ({versionChecker.CurrentVersion.Id}).", Tiger.LoggerLevels.HighVerbouse);
+                }
+            }
+            catch (Exception e)
+            {
+#if !DEBUG
+            MessageBox.Show("Could not get version.");
+#endif
+                Tiger.Logger.log($"Could not get version error {e}.", Tiger.LoggerLevels.HighVerbouse);
+            }
         }
 
         public void OnControlLoaded(object sender, RoutedEventArgs e)

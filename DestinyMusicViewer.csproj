@@ -33,10 +33,15 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Page Remove="version.xaml" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Extended.Wpf.Toolkit" Version="4.3.0" />
     <PackageReference Include="NAudio" Version="2.1.0" />
     <PackageReference Include="NAudio.Vorbis" Version="1.5.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    <PackageReference Include="VersionChecker" Version="1.1.0" />
   </ItemGroup>
 
   <ItemGroup>
