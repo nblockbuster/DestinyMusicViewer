@@ -73,7 +73,7 @@ namespace DestinyMusicViewer
             string spaces = "----";
             if (list.ChildCount != 0)
             {
-                var String1 = $"|{spaces}{list.Type} [{NetworkToHost(list.UnknownId)}]";
+                var String1 = $"|{spaces}{list.Type} [{ToHex(list.UnknownId)}]";
                 SerializedStrings.Add(String1);
                 Recursive(list.Children, ref SerializedStrings);
             }
@@ -81,7 +81,6 @@ namespace DestinyMusicViewer
         }
 
         int it = 8;
-        MusicPlaylistElement ThePreviousOne = null;
         MusicPlaylistElement Playlist = null;
         public void Recursive(MusicPlaylistElement[] list, ref List<string> SerializedStrings)
         {
@@ -96,9 +95,8 @@ namespace DestinyMusicViewer
                     else if (it != 8)
                         it += 4;
                     spaces = new string('-', it);
-                    var String2 = $"|{spaces}{ListChild.Type} [{NetworkToHost(ListChild.UnknownId)}] | Shuffle: {ListChild.IsShuffle} | Loop Count: {ListChild.LoopCount}";
+                    var String2 = $"|{spaces}{ListChild.Type} [{ToHex(ListChild.UnknownId)}] | Shuffle: {ListChild.IsShuffle} | Loop Count: {ListChild.LoopCount}";
                     SerializedStrings.Add(String2);
-                    ThePreviousOne = ListChild;
                     Recursive(ListChild.Children, ref SerializedStrings);
                 }
                 else if (ListChild.Type == MusicPlaylistElementType.MusicSegment)
@@ -108,7 +106,7 @@ namespace DestinyMusicViewer
                         if (searching_obj.Id == ListChild.SegmentId)
                         {
                             spaces = new string(' ', it+8);
-                            string SegmentString = $"|{spaces}MusicSegment [{NetworkToHost(searching_obj.Id)}] | Tempo: {searching_obj.Tempo} | Time Signature: {searching_obj.TimeSignatureUpper}/{searching_obj.TimeSignatureLower}";
+                            string SegmentString = $"|{spaces}MusicSegment [{ToHex(searching_obj.Id)}] | Tempo: {searching_obj.Tempo} | Time Signature: {searching_obj.TimeSignatureUpper}/{searching_obj.TimeSignatureLower}";
                             if (searching_obj.Properties.ParameterCount != 0 && searching_obj.Properties.ParameterTypes[0] == AudioParameterType.VoiceVolume)
                             {
                                 SegmentString += $" | Volume: {searching_obj.Properties.ParameterValues[0]}";
@@ -121,7 +119,7 @@ namespace DestinyMusicViewer
                                     if (track_obj.Id == childid)
                                     {
                                         spaces = new string(' ', it+12);
-                                        string TrackString = $"|{spaces}MusicTrack [{NetworkToHost(track_obj.Id)}]";
+                                        string TrackString = $"|{spaces}MusicTrack [{ToHex(track_obj.Id)}]";
                                         if (track_obj.Properties.ParameterCount != 0 && track_obj.Properties.ParameterTypes[0] == AudioParameterType.VoiceVolume)
                                         {
                                             TrackString += $" | Volume: {track_obj.Properties.ParameterValues[0]}";
@@ -144,6 +142,11 @@ namespace DestinyMusicViewer
                     }
                 }
             }
+        }
+        
+        public string ToHex(uint input)
+        {
+            return input.ToHex().ToUpper();
         }
         
         public string NetworkToHost(uint input)
@@ -172,7 +175,7 @@ namespace DestinyMusicViewer
             {
                 if (obj.Type != HIRCObjectType.MusicSwitchContainer || obj.Properties.ParentId == 0)
                     continue;
-                string SwitchContainerString = $"MusicSwitchContainer [{NetworkToHost(obj.Id)}] | Tempo: {obj.Tempo.ToString("0.0")} | Time Signature: {obj.TimeSignatureUpper}/{obj.TimeSignatureLower}";
+                string SwitchContainerString = $"MusicSwitchContainer [{ToHex(obj.Id)}] | Tempo: {obj.Tempo.ToString("0.0")} | Time Signature: {obj.TimeSignatureUpper}/{obj.TimeSignatureLower}";
                 if (obj.Properties.ParameterCount != 0 && obj.Properties.ParameterTypes[0] == AudioParameterType.VoiceVolume)
                 {
                     SwitchContainerString += $" | Volume: {obj.Properties.ParameterValues[0]}";
@@ -196,7 +199,7 @@ namespace DestinyMusicViewer
                     {
                         if (playlist_obj.Id == PlaylistId)
                         {
-                            string PlaylistContainerString = $"MusicPlaylistContainer [{NetworkToHost(PlaylistId)}] #{PlaylistTracker} | Tempo: {playlist_obj.Tempo.ToString("0.0")} | Time Signature: {playlist_obj.TimeSignatureUpper}/{playlist_obj.TimeSignatureLower}";
+                            string PlaylistContainerString = $"MusicPlaylistContainer [{ToHex(PlaylistId)}] #{PlaylistTracker} | Tempo: {playlist_obj.Tempo.ToString("0.0")} | Time Signature: {playlist_obj.TimeSignatureUpper}/{playlist_obj.TimeSignatureLower}";
                             if (playlist_obj.Properties.ParameterCount != 0 && playlist_obj.Properties.ParameterTypes[0] == AudioParameterType.VoiceVolume)
                             {
                                 PlaylistContainerString += $" | Volume: {playlist_obj.Properties.ParameterValues[0]}";
@@ -205,9 +208,9 @@ namespace DestinyMusicViewer
                             
                             var List = (playlist_obj as MusicPlaylistContainer).Playlist;
                             Playlist = List;
-                            SerializedStringsDict[NetworkToHost(PlaylistId)] = GenHierList(List);
-                            SerializedStringsDict[NetworkToHost(PlaylistId)].Insert(0, SwitchContainerString);
-                            SerializedStringsDict[NetworkToHost(PlaylistId)].Insert(1, PlaylistContainerString);
+                            SerializedStringsDict[ToHex(PlaylistId)] = GenHierList(List);
+                            SerializedStringsDict[ToHex(PlaylistId)].Insert(0, SwitchContainerString);
+                            SerializedStringsDict[ToHex(PlaylistId)].Insert(1, PlaylistContainerString);
                         }
                     }
 
