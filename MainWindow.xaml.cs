@@ -72,6 +72,8 @@ namespace DestinyMusicViewer
             MessageBox.Show("Could not get version.");
 #endif
                 Tiger.Logger.log($"Could not get version error {e}.", Tiger.LoggerLevels.HighVerbouse);
+                Tiger.Logger.log($"{versionChecker.VersionsLocation}", Tiger.LoggerLevels.HighVerbouse);
+                Tiger.Logger.log($"{versionChecker.}", Tiger.LoggerLevels.HighVerbouse);
             }
         }
 
