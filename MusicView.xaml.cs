@@ -1,36 +1,29 @@
 ﻿using System;
 using System.IO;
 using System.Collections.Generic;
-using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media;
-using System.Net;
 using System.Configuration;
 using System.Diagnostics;
-using System.Windows.Media.Animation;
 using System.Windows.Threading;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
 using NAudio.Vorbis;
 using Tiger;
 using Tiger.Formats;
-using WwiseParserLib.Structures.Chunks;
-using WwiseParserLib.Structures.Objects.HIRC;
-using WwiseParserLib.Structures.SoundBanks;
 using WwiseParserLib;
 using Newtonsoft.Json;
 
 namespace DestinyMusicViewer
 {
     /// <summary>
-    /// Interaction logic for BnkView.xaml
+    /// Interaction logic for MusicView.xaml
     /// </summary>
-    public partial class BnkView : UserControl
+    public partial class MusicView : UserControl
     {
         public struct GinsorIdEntry
         {
@@ -44,6 +37,7 @@ namespace DestinyMusicViewer
         public Dictionary<string, GinsorIdEntry> dictlist = new Dictionary<string, GinsorIdEntry>();
         public List<string> GinsorIDList = new List<string>();
         private MainWindow mainWindow = null;
+        private ScriptVew scriptView = null;
         private static WaveOut waveOut = new WaveOut();
         string CurrentGinsorId;
         int SelectedWemIndex = 0;
@@ -54,7 +48,7 @@ namespace DestinyMusicViewer
 
         public void log(string message)
         {
-            
+
             string time_string = DateTime.Now.ToString("dd/MMM/yyyy hh:mm:ss tt");
             Dispatcher.Invoke(() => logging_box.Text += $"[{time_string}]: {message}\n");
             if (logging_box.Text.Length > 4096)
@@ -64,23 +58,19 @@ namespace DestinyMusicViewer
             Dispatcher.Invoke(() => logging_box_scroller.ScrollToBottom());
         }
 
-        public BnkView()
+        public MusicView()
         {
             InitializeComponent();
         }
 
         private void OnControlLoaded(object sender, RoutedEventArgs e)
         {
-            mainWindow = Window.GetWindow(this) as MainWindow;
-            if (mainWindow.PkgCacheName != "")
-            {
-                InitialiseConfig();
-            }
-            Dispatcher.Invoke(() => VolSlider.Value = 1.0);
+            InitialiseConfig();
         }
 
         private void InitialiseConfig()
         {
+            mainWindow = Window.GetWindow(this) as MainWindow;
             if (mainWindow.config.AppSettings.Settings["PackagesPath"] != null)
             {
                 SelectPkgsDirectoryButton.Visibility = Visibility.Hidden;
@@ -101,7 +91,7 @@ namespace DestinyMusicViewer
 
         private void LoadList()
         {
-            
+
             List<uint> PackageIDs = new List<uint>();
             if (File.Exists("GinsorID_ref_dict.json"))
             {
@@ -128,9 +118,8 @@ namespace DestinyMusicViewer
             foreach (string GinsorId in GinsorIDList)
             {
                 ToggleButton btn = new ToggleButton();
-                Style style = Application.Current.Resources["Button_Command"] as Style;
 
-                btn.Style = style;
+                btn.Style = Application.Current.Resources["Button_Command"] as Style;
                 btn.HorizontalAlignment = HorizontalAlignment.Stretch;
                 btn.VerticalAlignment = VerticalAlignment.Center;
                 btn.Content = new TextBlock
@@ -142,7 +131,7 @@ namespace DestinyMusicViewer
                 btn.Background = new SolidColorBrush(Color.FromRgb(61, 61, 61));
                 btn.Foreground = new SolidColorBrush(Color.FromRgb(230, 230, 230));
                 btn.Height = 75;
-                btn.Width = 320;
+                btn.Width = 325;
                 btn.Focusable = true;
                 btn.Click += GinsButton_Click;
                 foreach (uint segment_id in dictlist[GinsorId].SegmentIDs)
@@ -164,7 +153,7 @@ namespace DestinyMusicViewer
         {
             if (!bIsSearched)
             {
-                SelectedWemIndex = PrimaryList.Items.IndexOf(sender as ToggleButton);   
+                SelectedWemIndex = PrimaryList.Items.IndexOf(sender as ToggleButton);
             }
 
             ClickPlay(GinsorId, sender, e);
@@ -177,6 +166,9 @@ namespace DestinyMusicViewer
                 Dispatcher.Invoke(() => (sender as ToggleButton).IsChecked = false);
                 bIsSearched = false;
             }
+
+            scriptView.viewScript();
+
         }
 
         private void ClickPlay(string GinsorId, object sender, RoutedEventArgs e)
@@ -206,9 +198,8 @@ namespace DestinyMusicViewer
                     GinsorIdsInSegment.Add(result.Key);
                 }
                 ToggleButton btn = new ToggleButton();
-                Style style = Application.Current.Resources["Button_Command"] as Style;
 
-                btn.Style = style;
+                btn.Style = Application.Current.Resources["Button_Command"] as Style;
                 btn.HorizontalAlignment = HorizontalAlignment.Stretch;
                 btn.VerticalAlignment = VerticalAlignment.Center;
                 btn.Focusable = true;
@@ -242,7 +233,7 @@ namespace DestinyMusicViewer
         }
 
         private void PlayPauseButton_Click(object sender, RoutedEventArgs e)
-        {   
+        {
             if (waveOut.PlaybackState == PlaybackState.Playing)
             {
                 waveOut.Pause();
@@ -253,12 +244,12 @@ namespace DestinyMusicViewer
                 Dispatcher.Invoke(() => (sender as ToggleButton).IsChecked = false);
             }
         }
-        
+
         private void PlayOgg(byte[] OggData)
         {
             vorbis = new VorbisWaveReader(new MemoryStream(OggData));
             double duration = vorbis.Length / vorbis.WaveFormat.AverageBytesPerSecond;
-            TrackInfoTextBlock.Text = "Track Info:\n    Length: " + duration.ToString("0.00") + "s";
+            Dispatcher.Invoke(() => ScriptView.TrackInfoTextBlock.Text = "Track Info:\n    Length: " + duration.ToString("0.00") + "s");
             try
             {
                 waveOut.Dispose();
@@ -318,7 +309,7 @@ namespace DestinyMusicViewer
                 }
             }
         }
-        
+
         private bool SetPackagePath(string Path)
         {
             if (Path == "")
@@ -345,7 +336,7 @@ namespace DestinyMusicViewer
             packages_path = Path;
             return true;
         }
-        
+
         private void SegmentSearchBox_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
         {
             if (e.Key == System.Windows.Input.Key.Enter)
@@ -382,9 +373,8 @@ namespace DestinyMusicViewer
                     GinsorIdsInSegment.Add(result.Key);
                 }
                 ToggleButton btn = new ToggleButton();
-                Style style = Application.Current.Resources["Button_Command"] as Style;
 
-                btn.Style = style;
+                btn.Style = Application.Current.Resources["Button_Command"] as Style;
                 btn.HorizontalAlignment = HorizontalAlignment.Stretch;
                 btn.VerticalAlignment = VerticalAlignment.Center;
                 btn.Focusable = true;
@@ -396,7 +386,7 @@ namespace DestinyMusicViewer
                     TextWrapping = TextWrapping.Wrap,
                     FontSize = 13
                 };
-                
+
                 foreach (var InSegmentGinsorId in GinsorIdsInSegment)
                 {
                     (btn.Content as TextBlock).Text += InSegmentGinsorId + " ";
@@ -420,9 +410,8 @@ namespace DestinyMusicViewer
                     {
                         bIsSearched = true;
                         ToggleButton btn = new ToggleButton();
-                        Style style = Application.Current.Resources["Button_Command"] as Style;
 
-                        btn.Style = style;
+                        btn.Style = Application.Current.Resources["Button_Command"] as Style;
                         btn.HorizontalAlignment = HorizontalAlignment.Stretch;
                         btn.VerticalAlignment = VerticalAlignment.Center;
                         btn.Focusable = true;
@@ -553,7 +542,7 @@ namespace DestinyMusicViewer
             (sender as ToggleButton).IsChecked = false;
             //TODO: Add logic to export a script for each playlist(?) a segment is in (get back to it later)
         }
-  
+
         private void ExportAllButton_Click(object sender, RoutedEventArgs e)
         {
             Configuration config = ConfigurationManager.OpenExeConfiguration(System.Windows.Forms.Application.ExecutablePath);
@@ -685,7 +674,7 @@ namespace DestinyMusicViewer
                 VorbisReaders.Add(vorb);
             }
             double duration = VorbisReaders[0].Length / VorbisReaders[0].WaveFormat.AverageBytesPerSecond;
-            TrackInfoTextBlock.Text = "Track Info:\n    Length: " + duration.ToString("0.00") + "s";
+            Dispatcher.Invoke(() => ScriptView.TrackInfoTextBlock.Text = "Track Info:\n    Length: " + duration.ToString("0.00") + "s");
             try
             {
                 var mixer = new MixingSampleProvider(VorbisReaders.ToArray());
@@ -729,13 +718,16 @@ namespace DestinyMusicViewer
                     if (entry.type == 26 && entry.subtype == 6)
                     {
                         byte[] bnkData = extractor.extract_entry_data(package, entry).data;
-                        foreach (string gins in genList(bnkData, ref id_to_segment))
+                        foreach (string gins in mainWindow._dmv.genList(bnkData, ref id_to_segment))
                         {
                             GinsorIDList.Add(gins);
                         }
                     }
                 }
             }
+
+            Dispatcher.Invoke(() => log("Loading..."));
+            Dispatcher.Invoke(() => PrimaryList.Items.Clear());
 
             GinsorIDList = GinsorIDList.Distinct().ToList();
             foreach (string gins in GinsorIDList.ToArray())
@@ -748,11 +740,9 @@ namespace DestinyMusicViewer
                 ginsid_entry.SegmentIDs = SegmentIds;
                 dictlist[gins] = ginsid_entry;
 
-
                 ToggleButton btn = new ToggleButton();
-                Style style = Application.Current.Resources["Button_Command"] as Style;
 
-                btn.Style = style;
+                btn.Style = Application.Current.Resources["Button_Command"] as Style;
                 btn.HorizontalAlignment = HorizontalAlignment.Stretch;
                 btn.VerticalAlignment = VerticalAlignment.Center;
                 btn.Content = new TextBlock
@@ -764,7 +754,7 @@ namespace DestinyMusicViewer
                 btn.Background = new SolidColorBrush(Color.FromRgb(61, 61, 61));
                 btn.Foreground = new SolidColorBrush(Color.FromRgb(230, 230, 230));
                 btn.Height = 75;
-                btn.Width = 320;
+                btn.Width = 325;
                 btn.Focusable = true;
                 btn.Click += GinsButton_Click;
                 foreach (uint segment_id in dictlist[gins].SegmentIDs)
@@ -777,64 +767,9 @@ namespace DestinyMusicViewer
             var json = JsonConvert.SerializeObject(dictlist, Formatting.Indented);
             File.WriteAllText("GinsorID_ref_dict.json", json);
             File.WriteAllLines("OSTs.db", GinsorIDList);
-            Dispatcher.Invoke(() => log("Loading..."));
-            Dispatcher.Invoke(() => PrimaryList.Items.Clear());
-            //ShowList();
             Dispatcher.Invoke(() => log("All loaded."));
             MessageBox.Show("Done regenerating music list.");
             Dispatcher.Invoke(() => RegenerateListButton.IsChecked = false);
         }
-
-        public List<string> genList(byte[] soundBankData, ref Dictionary<string, List<uint>> id_to_segment)
-        {
-            List<string> GinsorIDs = new List<string>();
-            SoundBank memSoundBank = new InMemorySoundBank(soundBankData);
-            var bkhd = memSoundBank.ParseChunk(SoundBankChunkType.BKHD);
-            if (bkhd == null)
-            {
-                throw new Exception("The specified file does not have a valid SoundBank header.");
-            }
-            var hirc = memSoundBank.GetChunk(SoundBankChunkType.HIRC);
-            if (hirc == null)
-            {
-                throw new Exception("The specified file does not have a valid Hierarchy header.");
-            }
-
-            var musicObjs = (hirc as SoundBankHierarchyChunk).Objects
-                .Where(o => o is MusicObject)
-                .Select(o => o as MusicObject);
-
-            foreach (var obj in musicObjs)
-            {
-                if (obj.Type == HIRCObjectType.MusicSegment)
-                {
-                    var segment = obj as MusicSegment;
-                    for (int i = 0; i < segment.ChildCount; i++)
-                    {
-                        foreach (var srch_obj in musicObjs)
-                        {
-                            if (srch_obj.Id == segment.ChildIds[i])
-                            {
-                                var track = srch_obj as MusicTrack;
-                                for (int x = 0; x < track.SoundCount; x++)
-                                {
-                                    var sound = track.Sounds[x];
-                                    var ginsid = ((uint)IPAddress.NetworkToHostOrder((int)sound.AudioId)).ToHex().ToUpper();
-                                    Debug.WriteLine($"GinsorID of track {track.Id} (Parent Segment: {segment.Id}): {ginsid}");
-                                    if (!id_to_segment.ContainsKey(ginsid) || id_to_segment[ginsid] == null)
-                                    {
-                                        id_to_segment[ginsid] = new List<uint>();
-                                    }
-                                    id_to_segment[ginsid].Add(segment.Id);
-                                    GinsorIDs.Add(ginsid);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            return GinsorIDs;
-        }
-
     }
 }

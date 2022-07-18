@@ -1,0 +1,26 @@
+﻿<UserControl x:Class="DestinyMusicViewer.BankView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:DestinyMusicViewer"
+             mc:Ignorable="d"
+             Loaded="OnControlLoaded"
+             d:DesignHeight="1080" d:DesignWidth="1920" FontSize="16">
+    <Grid Background="#FF393939">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="3*"/>
+            <ColumnDefinition Width="3*"/>
+            <ColumnDefinition Width="3*"/>
+            <ColumnDefinition Width="7*"/>
+        </Grid.ColumnDefinitions>
+        <ListBox ScrollViewer.HorizontalScrollBarVisibility="Disabled" Background="#FF393939" Focusable="False" BorderBrush="#FF393939" x:Name="PrimaryList">
+            <ToggleButton x:Name="SelectPkgsDirectoryButton" Style="{StaticResource ButtonStyle}" Content="Select Packages Directory" Click="SelectPkgsDirectoryButton_Click" Margin="80,480,0,0" Height="30" Width="200"/>
+        </ListBox>
+        <ScrollViewer x:Name="HierarchyScroller" Grid.Column="3" Margin="0,0,1,0">
+            <TextBox x:Name="HierarchyTextBlock" TextWrapping="Wrap" Text="" Foreground="#FFDDDDDD" Background="#FF393939" BorderBrush="#FF393939"/>
+        </ScrollViewer>
+        <ListBox ScrollViewer.HorizontalScrollBarVisibility="Disabled" Background="#FF393939" Focusable="False" BorderBrush="#FF393939" x:Name="SecondaryList" Grid.Column="1" Margin="10,0,10,0"/>
+        <ListBox ScrollViewer.HorizontalScrollBarVisibility="Disabled" Background="#FF393939" Focusable="False" BorderBrush="#FF393939" x:Name="TertiaryList" Grid.Column="2" Margin="10,0,10,0"/>
+    </Grid>
+</UserControl>

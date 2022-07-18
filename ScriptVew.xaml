@@ -1,0 +1,19 @@
+﻿<UserControl x:Class="DestinyMusicViewer.ScriptVew"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:DestinyMusicViewer"
+             mc:Ignorable="d" 
+             d:DesignHeight="720" d:DesignWidth="1200">
+    <StackPanel Background="#FF393939">
+        <TextBlock x:Name="TrackInfoTextBlock" HorizontalAlignment="Left" Margin="10,10,0,0" TextWrapping="Wrap" Text="Track Info:" Foreground="#FFDDDDDD" FontSize="16" Height="200" Width="200"/>
+        <RichTextBox Background="{x:Null}" Foreground="#FFDDDDDD" Height="510" Width="1200" BorderBrush="{x:Null}" Visibility="Hidden">
+            <FlowDocument>
+                <Paragraph>
+                    <Run Text=""/>
+                </Paragraph>
+            </FlowDocument>
+        </RichTextBox>
+    </StackPanel>
+</UserControl>

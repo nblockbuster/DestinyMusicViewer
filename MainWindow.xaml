@@ -34,19 +34,10 @@
                 <ToggleButton x:Name="ClearOutputPathButton" Content="Clear Output Path" Click="ClearOutputPathButton_Click"/>
                 <ToggleButton x:Name="SetOutputPathButton" Content="Set Output Path" Click="SetOutputPathButton_Click"/>
             </MenuItem>
-            <MenuItem x:Name="AboutButton" Header="About" Background="#FF424242" Foreground="#FFE6E6E6" Height="20" Width="45" Click="AboutButton_Click"/>
         </Menu>
         <TabControl x:Name="MainTabControl" Grid.Row="1" Background="{x:Null}" Foreground="{x:Null}" BorderBrush="{x:Null}">
-            <!--
-            <TabItem Header="Home" x:Name="HomeViewTab" BorderBrush="{x:Null}" Background="{x:Null}" Foreground="Black" >
-                <local:HomeView  x:Name="HomeViewItem"/>
-            </TabItem>
-            <TabItem Header="Bank Viewer" x:Name="BnkViewTab" BorderBrush="{x:Null}" Background="{x:Null}" Foreground="Black">
-                <local:BnkView  x:Name="BnkViewItem"/>
-            </TabItem>
-            -->
-            <TabItem Header="Home" x:Name="BnkViewTab" BorderBrush="{x:Null}" Background="{x:Null}" Foreground="Black">
-                <local:BnkView  x:Name="BnkViewItem"/>
+            <TabItem Header="Home" x:Name="MainMenuTab">
+                <local:MainMenuView/>
             </TabItem>
         </TabControl>
     </Grid>

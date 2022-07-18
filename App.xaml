@@ -13,7 +13,6 @@
                 </Setter.Value>
             </Setter>
         </Style>
-
         <!--
         <Style x:Key="ButtonStyle" TargetType="{x:Type ToggleButton}">
             <Setter Property="BorderBrush">

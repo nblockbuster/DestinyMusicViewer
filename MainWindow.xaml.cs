@@ -32,6 +32,9 @@ namespace DestinyMusicViewer
         public string PkgCacheName;
         public string PkgPathKey;
         public string OutputPath = string.Empty;
+        private static TabItem _newestTab = null;
+        public DestMusViewer _dmv = new DestMusViewer();
+        
         public MainWindow()
         {
             InitializeComponent();
@@ -128,10 +131,27 @@ namespace DestinyMusicViewer
             }
         }
 
-        private void AboutButton_Click(object sender, RoutedEventArgs e)
+        public void SetNewestTabSelected()
         {
-            new AboutWindow().Show();
-            AboutButton.IsChecked = false;
+            MainTabControl.SelectedItem = _newestTab;
+        }
+
+        public void MakeNewTab(string name, UserControl content)
+        {
+            var items = MainTabControl.Items;
+            foreach (TabItem item in items)
+            {
+                if (name == (string)item.Header)
+                {
+                    _newestTab = item;
+                    return;
+                }
+            }
+
+            _newestTab = new TabItem();
+            _newestTab.Content = content;
+            MainTabControl.Items.Add(_newestTab);
+            _newestTab.Header = name;
         }
     }
 }
